@@ -114,6 +114,9 @@ return new class extends Migration
             ['appointments', 'agenda_blocks', 'charge_items', 'commission_payments', 'prescriptions']
             as $tbl
         ) {
+            if (Schema::hasColumn($tbl, 'specialist_id')) {
+                continue;
+            }
             Schema::table($tbl, function (Blueprint $table): void {
                 $table->unsignedBigInteger('specialist_id')->nullable()->after('tenant_id');
             });
@@ -205,39 +208,94 @@ return new class extends Migration
             });
         }
 
-        foreach ($this->map as $userId => $specialistId) {
-            DB::table('treatment_specialist_commissions')
-                ->where('user_id', $userId)
-                ->update(['specialist_id' => $specialistId]);
+        if (Schema::hasColumn('treatment_specialist_commissions', 'user_id')) {
+            foreach ($this->map as $userId => $specialistId) {
+                DB::table('treatment_specialist_commissions')
+                    ->where('user_id', $userId)
+                    ->update(['specialist_id' => $specialistId]);
+            }
+
+            $this->dropAllConstraintsOnColumn('treatment_specialist_commissions', 'user_id');
+            DB::statement('ALTER TABLE `treatment_specialist_commissions` DROP COLUMN `user_id`');
         }
 
-        // MySQL 8 no elimina automáticamente el índice asociado a un FK al hacer
-        // dropForeign, por lo que hay que soltar todos los índices sobre user_id
-        // explícitamente antes de poder eliminar la columna.
-        Schema::table('treatment_specialist_commissions', function (Blueprint $table): void {
-            if (Schema::hasColumn('treatment_specialist_commissions', 'user_id')) {
-                $table->dropUnique('tsc_tenant_user_treatment_unique');
-                $table->dropIndex('tsc_tenant_user_idx');
-                $table->dropForeign(['user_id']);
-                $table->dropIndex('treatment_specialist_commissions_user_id_foreign');
-                $table->dropColumn('user_id');
-            }
-        });
+        // FK y unique recreate (idempotente).
+        $hasFk = $this->foreignKeyExists(
+            'treatment_specialist_commissions',
+            'treatment_specialist_commissions_specialist_id_foreign',
+        );
+        if (! $hasFk) {
+            Schema::table('treatment_specialist_commissions', function (Blueprint $table): void {
+                $table->foreign('specialist_id')
+                    ->references('id')
+                    ->on('specialists')
+                    ->cascadeOnDelete();
+            });
+        }
 
-        // FK y unique recreate
-        Schema::table('treatment_specialist_commissions', function (Blueprint $table): void {
-            // Si no hay filas con NULL, marca NOT NULL.
-            // (Saltamos modify para mantener simple; un seed posterior limpia.)
-            $table->foreign('specialist_id')
-                ->references('id')
-                ->on('specialists')
-                ->cascadeOnDelete();
-            $table->unique(
-                ['tenant_id', 'specialist_id', 'treatment_id'],
-                'tsc_tenant_specialist_treatment_unique',
-            );
-            $table->index(['tenant_id', 'specialist_id'], 'tsc_tenant_specialist_idx');
-        });
+        if (! $this->indexExists('treatment_specialist_commissions', 'tsc_tenant_specialist_treatment_unique')) {
+            Schema::table('treatment_specialist_commissions', function (Blueprint $table): void {
+                $table->unique(
+                    ['tenant_id', 'specialist_id', 'treatment_id'],
+                    'tsc_tenant_specialist_treatment_unique',
+                );
+            });
+        }
+
+        if (! $this->indexExists('treatment_specialist_commissions', 'tsc_tenant_specialist_idx')) {
+            Schema::table('treatment_specialist_commissions', function (Blueprint $table): void {
+                $table->index(['tenant_id', 'specialist_id'], 'tsc_tenant_specialist_idx');
+            });
+        }
+    }
+
+    /**
+     * Suelta todos los FK e índices (no PRIMARY) que referencian `$column`.
+     * Necesario para evitar el error 1072 de MySQL 8 al borrar la columna.
+     */
+    private function dropAllConstraintsOnColumn(string $table, string $column): void
+    {
+        $database = DB::getDatabaseName();
+
+        $foreignKeys = DB::select(
+            'SELECT DISTINCT constraint_name FROM information_schema.key_column_usage
+             WHERE table_schema = ? AND table_name = ? AND column_name = ?
+               AND referenced_table_name IS NOT NULL',
+            [$database, $table, $column],
+        );
+        foreach ($foreignKeys as $fk) {
+            $name = $fk->constraint_name ?? $fk->CONSTRAINT_NAME;
+            DB::statement("ALTER TABLE `{$table}` DROP FOREIGN KEY `{$name}`");
+        }
+
+        $indexes = DB::select(
+            "SELECT DISTINCT index_name FROM information_schema.statistics
+             WHERE table_schema = ? AND table_name = ? AND column_name = ?
+               AND index_name <> 'PRIMARY'",
+            [$database, $table, $column],
+        );
+        foreach ($indexes as $idx) {
+            $name = $idx->index_name ?? $idx->INDEX_NAME;
+            DB::statement("ALTER TABLE `{$table}` DROP INDEX `{$name}`");
+        }
+    }
+
+    private function indexExists(string $table, string $name): bool
+    {
+        return DB::selectOne(
+            'SELECT 1 AS hit FROM information_schema.statistics
+             WHERE table_schema = ? AND table_name = ? AND index_name = ? LIMIT 1',
+            [DB::getDatabaseName(), $table, $name],
+        ) !== null;
+    }
+
+    private function foreignKeyExists(string $table, string $name): bool
+    {
+        return DB::selectOne(
+            'SELECT 1 AS hit FROM information_schema.referential_constraints
+             WHERE constraint_schema = ? AND table_name = ? AND constraint_name = ? LIMIT 1',
+            [DB::getDatabaseName(), $table, $name],
+        ) !== null;
     }
 
     private function deleteDentistUsers(): void
