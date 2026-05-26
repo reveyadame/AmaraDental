@@ -211,14 +211,16 @@ return new class extends Migration
                 ->update(['specialist_id' => $specialistId]);
         }
 
-        // Quita índices compuestos y FK de user_id antes de eliminar la columna.
-        // MySQL no permite eliminar una columna que forma parte de un índice compuesto
-        // sin soltar primero esos índices explícitamente.
+        // MySQL 8 no elimina automáticamente el índice asociado a un FK al hacer
+        // dropForeign, por lo que hay que soltar todos los índices sobre user_id
+        // explícitamente antes de poder eliminar la columna.
         Schema::table('treatment_specialist_commissions', function (Blueprint $table): void {
             if (Schema::hasColumn('treatment_specialist_commissions', 'user_id')) {
                 $table->dropUnique('tsc_tenant_user_treatment_unique');
                 $table->dropIndex('tsc_tenant_user_idx');
-                $table->dropConstrainedForeignId('user_id');
+                $table->dropForeign(['user_id']);
+                $table->dropIndex('treatment_specialist_commissions_user_id_foreign');
+                $table->dropColumn('user_id');
             }
         });
 
