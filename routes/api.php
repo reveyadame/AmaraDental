@@ -1,0 +1,179 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Http\Controllers\AgendaBlocksController;
+use App\Http\Controllers\AppointmentsController;
+use App\Http\Controllers\AuditsController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\BrandingController;
+use App\Http\Controllers\CashExpensesController;
+use App\Http\Controllers\CashMovementsController;
+use App\Http\Controllers\CashSessionsController;
+use App\Http\Controllers\ChargePaymentsController;
+use App\Http\Controllers\ChargesController;
+use App\Http\Controllers\CommissionPaymentsController;
+use App\Http\Controllers\IcsFeedController;
+use App\Http\Controllers\ConsentTemplatesController;
+use App\Http\Controllers\ConsentsController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DiscountsController;
+use App\Http\Controllers\LabOrdersController;
+use App\Http\Controllers\LabsController;
+use App\Http\Controllers\MedicalHistoryController;
+use App\Http\Controllers\MembershipPlansController;
+use App\Http\Controllers\MembershipsController;
+use App\Http\Controllers\OdontogramController;
+use App\Http\Controllers\PatientsController;
+use App\Http\Controllers\PrescriptionsController;
+use App\Http\Controllers\PrescriptionTemplatesController;
+use App\Http\Controllers\RecallsController;
+use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\SpecialistCommissionsController;
+use App\Http\Controllers\SpecialistsController;
+use App\Http\Controllers\TreatmentsController;
+use App\Http\Controllers\UsersController;
+use Illuminate\Support\Facades\Route;
+
+/*
+ * Público (post middleware ResolveTenant, así devuelve datos del tenant activo).
+ */
+Route::get('/branding', [BrandingController::class, 'show']);
+
+Route::post('/auth/login', [AuthController::class, 'login']);
+
+/*
+ * Feed ICS (autenticado por token en la URL — sin sesión).
+ */
+Route::get('agenda/feed/{token}.ics', [IcsFeedController::class, 'feed'])
+    ->where('token', '[A-Za-z0-9]+');
+
+/*
+ * Autenticado.
+ */
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    Route::put('/branding', [BrandingController::class, 'update']);
+
+    Route::apiResource('users', UsersController::class);
+
+    Route::apiResource('patients', PatientsController::class);
+
+    // Historia clínica anidada (upsert vía PUT).
+    Route::get('patients/{patient}/medical-history', [MedicalHistoryController::class, 'show']);
+    Route::put('patients/{patient}/medical-history', [MedicalHistoryController::class, 'update']);
+
+    // Odontograma del paciente.
+    Route::get('patients/{patient}/odontogram', [OdontogramController::class, 'index']);
+    Route::put('patients/{patient}/odontogram/{tooth}', [OdontogramController::class, 'update'])
+        ->whereNumber('tooth');
+
+    // Consentimientos por paciente.
+    Route::get('patients/{patient}/consents', [ConsentsController::class, 'index']);
+    Route::post('patients/{patient}/consents', [ConsentsController::class, 'store']);
+    Route::get('patients/{patient}/consents/{consent}', [ConsentsController::class, 'show'])
+        ->name('consents.show');
+    Route::delete('patients/{patient}/consents/{consent}', [ConsentsController::class, 'destroy']);
+
+    // Catálogo de plantillas de consentimiento.
+    Route::apiResource('consent-templates', ConsentTemplatesController::class)
+        ->parameters(['consent-templates' => 'template']);
+
+    // Catálogo de tratamientos y descuentos.
+    Route::apiResource('treatments', TreatmentsController::class);
+    Route::apiResource('discounts', DiscountsController::class)->except(['show']);
+
+    // Catálogo de especialistas (no son usuarios del sistema).
+    Route::apiResource('specialists', SpecialistsController::class);
+
+    // Comisiones por tratamiento del especialista.
+    Route::get('specialists/{specialist}/commissions', [SpecialistCommissionsController::class, 'index']);
+    Route::put('specialists/{specialist}/commissions', [SpecialistCommissionsController::class, 'sync']);
+
+    // Pagos de comisiones (bitácora).
+    Route::get('commission-payments/pending', [CommissionPaymentsController::class, 'pending']);
+    Route::get('commission-payments', [CommissionPaymentsController::class, 'index']);
+    Route::get('commission-payments/{payment}', [CommissionPaymentsController::class, 'show']);
+    Route::post('commission-payments', [CommissionPaymentsController::class, 'store']);
+    Route::delete('commission-payments/{payment}', [CommissionPaymentsController::class, 'destroy']);
+
+    // Caja.
+    Route::get('cash-sessions/current', [CashSessionsController::class, 'current']);
+    Route::get('cash-sessions', [CashSessionsController::class, 'index']);
+    Route::get('cash-sessions/{cashSession}', [CashSessionsController::class, 'show']);
+    Route::get('cash-sessions/{cashSession}/movements', [CashSessionsController::class, 'movements']);
+    Route::post('cash-sessions', [CashSessionsController::class, 'open']);
+    Route::post('cash-sessions/{cashSession}/close', [CashSessionsController::class, 'close']);
+
+    // Egresos de caja.
+    Route::get('cash-expenses', [CashExpensesController::class, 'index']);
+    Route::post('cash-expenses', [CashExpensesController::class, 'store']);
+
+    // Vista consolidada de movimientos (admin) — entradas + salidas con filtros.
+    Route::get('cash-movements', [CashMovementsController::class, 'index']);
+    Route::delete('cash-expenses/{expense}', [CashExpensesController::class, 'destroy']);
+
+    Route::get('charges', [ChargesController::class, 'index']);
+    Route::get('charges/{charge}', [ChargesController::class, 'show']);
+    Route::post('charges', [ChargesController::class, 'store']);
+    Route::post('charges/{charge}/payments', [ChargesController::class, 'addPayment']);
+    Route::delete('charge-payments/{payment}', [ChargePaymentsController::class, 'destroy']);
+    Route::get('patients/{patient}/account', [ChargesController::class, 'patientAccount']);
+    Route::post('charges/{charge}/cancel', [ChargesController::class, 'cancel']);
+
+    // Agenda.
+    Route::apiResource('appointments', AppointmentsController::class);
+    Route::post('appointments/{appointment}/status', [AppointmentsController::class, 'changeStatus']);
+
+    // Bloqueos de agenda (horarios cerrados).
+    Route::apiResource('agenda-blocks', AgendaBlocksController::class)
+        ->parameters(['agenda-blocks' => 'block']);
+
+    // Feed ICS — gestión del token del usuario actual.
+    Route::get('agenda/feed-token', [IcsFeedController::class, 'show']);
+    Route::post('agenda/feed-token', [IcsFeedController::class, 'regenerate']);
+
+    // Recetas.
+    Route::get('patients/{patient}/prescriptions', [PrescriptionsController::class, 'index']);
+    Route::post('patients/{patient}/prescriptions', [PrescriptionsController::class, 'store']);
+    Route::get('prescriptions/{prescription}', [PrescriptionsController::class, 'show']);
+    Route::delete('prescriptions/{prescription}', [PrescriptionsController::class, 'destroy']);
+
+    // Plantillas de recetas.
+    Route::apiResource('prescription-templates', PrescriptionTemplatesController::class)
+        ->parameters(['prescription-templates' => 'template']);
+
+    // Bitácora / auditoría (solo admin; check dentro del controller).
+    Route::get('audits', [AuditsController::class, 'index']);
+    Route::get('audits/meta', [AuditsController::class, 'meta']);
+
+    // Reportes (solo admin — la policy se aplica dentro del controller).
+    Route::get('reports/sales', [ReportsController::class, 'sales']);
+    Route::get('reports/payments', [ReportsController::class, 'payments']);
+    Route::get('reports/commissions', [ReportsController::class, 'commissions']);
+
+    // Laboratorios.
+    Route::apiResource('labs', LabsController::class);
+    Route::apiResource('lab-orders', LabOrdersController::class)
+        ->parameters(['lab-orders' => 'order']);
+    Route::post('lab-orders/{order}/status', [LabOrdersController::class, 'changeStatus']);
+
+    // Recalls preventivos.
+    Route::get('recalls', [RecallsController::class, 'index']);
+    Route::get('recalls/{recall}', [RecallsController::class, 'show']);
+    Route::patch('recalls/{recall}', [RecallsController::class, 'update']);
+    Route::delete('recalls/{recall}', [RecallsController::class, 'destroy']);
+
+    // Membresías.
+    Route::apiResource('membership-plans', MembershipPlansController::class)
+        ->parameters(['membership-plans' => 'plan']);
+    Route::get('memberships', [MembershipsController::class, 'index']);
+    Route::get('memberships/{membership}', [MembershipsController::class, 'show']);
+    Route::post('memberships', [MembershipsController::class, 'store']);
+    Route::post('memberships/{membership}/cancel', [MembershipsController::class, 'cancel']);
+    Route::get('patients/{patient}/membership', [MembershipsController::class, 'currentForPatient']);
+});
