@@ -439,7 +439,7 @@ function HeaderUserMenu({
               {me?.name}
             </span>
             <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-              {me?.roles.join(', ')}
+              {me?.roles.includes('admin') ? 'Administrador' : 'Operador'}
             </span>
           </span>
         </button>
