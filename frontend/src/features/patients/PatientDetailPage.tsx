@@ -1,0 +1,270 @@
+import { useState } from 'react'
+import { Link, useParams, Navigate } from 'react-router-dom'
+import {
+  ArrowLeft,
+  CalendarDays,
+  Mail,
+  MapPin,
+  Phone,
+  Stethoscope,
+  PencilLine,
+} from 'lucide-react'
+import { usePatient } from './hooks'
+import { PatientFormDialog } from './PatientFormDialog'
+import { MedicalHistoryTab } from './MedicalHistoryTab'
+import { ConsentsTab } from './ConsentsTab'
+import { OdontogramTab } from './OdontogramTab'
+import { PrescriptionsTab } from '@/features/prescriptions/PrescriptionsTab'
+import { PatientAccountTab } from '@/features/cash/PatientAccountTab'
+import { PatientMembershipTab } from '@/features/memberships/PatientMembershipTab'
+import { PatientLabOrdersTab } from '@/features/labs/PatientLabOrdersTab'
+import { PatientRecallsTab } from '@/features/recalls/PatientRecallsTab'
+import { useMe } from '@/features/auth/hooks'
+import { useBranding } from '@/shared/theme/ThemeProvider'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
+import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
+import { Skeleton } from '@/shared/ui/skeleton'
+import { Separator } from '@/shared/ui/separator'
+
+function initials(p: { first_name: string; last_name: string }) {
+  return `${p.first_name[0] ?? ''}${p.last_name[0] ?? ''}`.toUpperCase()
+}
+
+function formatDate(iso: string | null): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('es-MX', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+export function PatientDetailPage() {
+  const params = useParams<{ id: string }>()
+  const id = params.id ? Number(params.id) : undefined
+  const patient = usePatient(id)
+  const { branding } = useBranding()
+  const [edit, setEdit] = useState(false)
+  const { data: me } = useMe()
+  // Tabs clínicas requieren permiso `clinical.view`. Quienes solo hacen
+  // caja/agenda no ven historia, odontograma, recetas ni consentimientos.
+  const canViewClinical = me?.permissions.includes('clinical.view') ?? false
+  const canManage = me?.permissions.includes('patients.manage') ?? false
+
+  if (!id || Number.isNaN(id)) return <Navigate to="/pacientes" replace />
+
+  return (
+    <div className="mx-auto max-w-6xl px-6 py-10 space-y-6">
+      <Link
+        to="/pacientes"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" /> Pacientes
+      </Link>
+
+      {patient.isPending ? (
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </CardContent>
+        </Card>
+      ) : !patient.data ? (
+        <p className="text-sm text-muted-foreground">Paciente no encontrado.</p>
+      ) : (
+        <>
+          <Card>
+            <CardContent className="p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <div className="grid size-16 place-items-center rounded-full bg-primary/10 text-primary text-lg font-semibold">
+                  {initials(patient.data)}
+                </div>
+                <div className="space-y-1">
+                  <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                    {patient.data.full_name}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    <Badge variant="secondary">
+                      {patient.data.gender === 'F'
+                        ? 'Femenino'
+                        : patient.data.gender === 'M'
+                          ? 'Masculino'
+                          : 'Otro'}
+                    </Badge>
+                    {patient.data.age != null ? (
+                      <span className="inline-flex items-center gap-1">
+                        <CalendarDays className="size-3.5" /> {patient.data.age} años
+                      </span>
+                    ) : null}
+                    {patient.data.date_of_birth ? (
+                      <span>Nacimiento: {formatDate(patient.data.date_of_birth)}</span>
+                    ) : null}
+                    {patient.data.curp ? <span>CURP {patient.data.curp}</span> : null}
+                  </div>
+                </div>
+              </div>
+              {canManage ? (
+                <Button variant="outline" onClick={() => setEdit(true)}>
+                  <PencilLine className="size-4" /> Editar
+                </Button>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          <Tabs defaultValue="datos" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="datos">Datos</TabsTrigger>
+              <TabsTrigger value="cuenta">Estado de cuenta</TabsTrigger>
+              <TabsTrigger value="membresia">Membresía</TabsTrigger>
+              {canViewClinical ? (
+                <>
+                  <TabsTrigger value="historia">Historia clínica</TabsTrigger>
+                  <TabsTrigger value="odontograma">Odontograma</TabsTrigger>
+                  <TabsTrigger value="recetas">Recetas</TabsTrigger>
+                </>
+              ) : null}
+              <TabsTrigger value="laboratorios">Laboratorios</TabsTrigger>
+              <TabsTrigger value="recalls">Recalls</TabsTrigger>
+              {canViewClinical ? (
+                <TabsTrigger value="consentimientos">Consentimientos</TabsTrigger>
+              ) : null}
+            </TabsList>
+
+            <TabsContent value="datos">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Contacto</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    {patient.data.mobile_phone ? (
+                      <p className="flex items-center gap-2 text-muted-foreground">
+                        <Phone className="size-4" /> {patient.data.mobile_phone}{' '}
+                        <span className="text-xs">(celular)</span>
+                      </p>
+                    ) : null}
+                    {patient.data.phone ? (
+                      <p className="flex items-center gap-2 text-muted-foreground">
+                        <Phone className="size-4" /> {patient.data.phone}{' '}
+                        <span className="text-xs">(fijo)</span>
+                      </p>
+                    ) : null}
+                    {patient.data.email ? (
+                      <p className="flex items-center gap-2 text-muted-foreground">
+                        <Mail className="size-4" /> {patient.data.email}
+                      </p>
+                    ) : null}
+                    <Separator />
+                    {patient.data.address || patient.data.city || patient.data.state ? (
+                      <p className="flex items-start gap-2 text-muted-foreground">
+                        <MapPin className="size-4 mt-0.5" />
+                        <span>
+                          {patient.data.address}
+                          {patient.data.address ? <br /> : null}
+                          {[patient.data.city, patient.data.state, patient.data.postal_code]
+                            .filter(Boolean)
+                            .join(', ')}
+                        </span>
+                      </p>
+                    ) : (
+                      <p className="text-muted-foreground/70 text-sm">Sin domicilio registrado.</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Datos adicionales</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Ocupación</p>
+                      <p className="text-foreground">{patient.data.occupation ?? '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Referido por</p>
+                      <p className="text-foreground">{patient.data.referred_by ?? '—'}</p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Contacto de emergencia</p>
+                      <p className="text-foreground">
+                        {patient.data.emergency_contact_name ?? '—'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {patient.data.emergency_contact_phone ?? ''}
+                      </p>
+                    </div>
+                    {patient.data.notes ? (
+                      <>
+                        <Separator />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Notas</p>
+                          <p className="whitespace-pre-wrap text-foreground">
+                            {patient.data.notes}
+                          </p>
+                        </div>
+                      </>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="cuenta">
+              <PatientAccountTab patientId={patient.data.id} />
+            </TabsContent>
+
+            <TabsContent value="membresia">
+              <PatientMembershipTab patient={patient.data} />
+            </TabsContent>
+
+            {canViewClinical ? (
+              <>
+                <TabsContent value="historia">
+                  <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
+                    <Stethoscope className="size-4" />
+                    Historia clínica conforme NOM-004. Cada cambio queda registrado en la bitácora.
+                  </div>
+                  <MedicalHistoryTab
+                    patientId={patient.data.id}
+                    isFemale={patient.data.gender === 'F'}
+                  />
+                </TabsContent>
+
+                <TabsContent value="odontograma">
+                  <OdontogramTab patientId={patient.data.id} />
+                </TabsContent>
+
+                <TabsContent value="recetas">
+                  <PrescriptionsTab patientId={patient.data.id} />
+                </TabsContent>
+              </>
+            ) : null}
+
+            <TabsContent value="laboratorios">
+              <PatientLabOrdersTab patient={patient.data} />
+            </TabsContent>
+
+            <TabsContent value="recalls">
+              <PatientRecallsTab patient={patient.data} />
+            </TabsContent>
+
+            {canViewClinical ? (
+              <TabsContent value="consentimientos">
+                <ConsentsTab
+                  patient={patient.data}
+                  clinicName={branding?.brand_name ?? 'la clínica'}
+                />
+              </TabsContent>
+            ) : null}
+          </Tabs>
+
+          <PatientFormDialog open={edit} onOpenChange={setEdit} patient={patient.data} />
+        </>
+      )}
+    </div>
+  )
+}
