@@ -211,9 +211,13 @@ return new class extends Migration
                 ->update(['specialist_id' => $specialistId]);
         }
 
-        // Quita constraints viejos
+        // Quita índices compuestos y FK de user_id antes de eliminar la columna.
+        // MySQL no permite eliminar una columna que forma parte de un índice compuesto
+        // sin soltar primero esos índices explícitamente.
         Schema::table('treatment_specialist_commissions', function (Blueprint $table): void {
             if (Schema::hasColumn('treatment_specialist_commissions', 'user_id')) {
+                $table->dropUnique('tsc_tenant_user_treatment_unique');
+                $table->dropIndex('tsc_tenant_user_idx');
                 $table->dropConstrainedForeignId('user_id');
             }
         });
