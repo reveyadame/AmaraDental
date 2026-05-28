@@ -263,32 +263,25 @@ export function PrintPrescriptionPage() {
             </section>
           ) : null}
 
-          {/* Espacio para firma — centrado */}
-          {!preprinted ? (
-            <section className={`${compact || isHalfLetter ? 'pt-10' : 'pt-14'} flex justify-center`}>
-              <div className="w-64 text-center">
-                <div
-                  className={`border-t-2 border-black pt-2 mx-4 ${compact || isHalfLetter ? 'min-h-[50px]' : 'min-h-[80px]'}`}
-                />
-                <p className="text-[11px] font-medium">Firma del médico</p>
-                <p className="text-[10px] text-gray-700 mt-0.5">{r.specialist_name}</p>
-                {r.specialist_cedula ? (
-                  <p className="text-[10px] text-gray-600 font-mono">
-                    Céd. Prof. {r.specialist_cedula}
-                  </p>
-                ) : null}
-              </div>
-            </section>
-          ) : (
-            // Preprinted: solo un espacio para firma sin etiquetas (el membrete las trae)
-            <section className={`${compact ? 'pt-6' : 'pt-8'} flex justify-center`}>
-              <div className="w-64 text-center">
-                <div
-                  className={`border-t border-black pt-1 mx-4 ${compact ? 'min-h-[40px]' : 'min-h-[60px]'}`}
-                />
-              </div>
-            </section>
-          )}
+          {/* Quién expide — identificación del prescriptor, sin línea de firma.
+              Se incluye en ambos modos (también en "solo contenido"). El espacio
+              superior deja lugar para la firma/sello físicos. */}
+          <section
+            className={`${compact || isHalfLetter ? 'pt-10' : 'pt-14'} flex justify-center`}
+          >
+            <div className="min-w-[220px] text-center">
+              <p className="text-sm font-semibold leading-tight">{r.specialist_name}</p>
+              <p className="text-[11px] text-gray-700">
+                {specialtyLabel(r.specialist_specialty)}
+              </p>
+              {r.specialist_cedula ? (
+                <p className="text-[10px] text-gray-600 font-mono">
+                  Céd. Prof. {r.specialist_cedula}
+                </p>
+              ) : null}
+              <p className="mt-0.5 text-[10px] text-gray-500">Médico que expide</p>
+            </div>
+          </section>
 
           {!preprinted ? (
             <footer className="text-[9px] text-gray-500 border-t pt-2 mt-6">

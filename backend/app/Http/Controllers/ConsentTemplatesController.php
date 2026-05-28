@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Enums\Role;
 use App\Http\Resources\ConsentTemplateResource;
 use App\Models\ConsentTemplate;
+use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -34,7 +35,7 @@ class ConsentTemplatesController extends Controller implements HasMiddleware
 
     public function store(Request $request): JsonResponse
     {
-        abort_unless($request->user()?->hasRole(Role::Admin->value), 403);
+        abort_unless($request->user()?->can(Permissions::CATALOGS_MANAGE), 403);
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -50,7 +51,7 @@ class ConsentTemplatesController extends Controller implements HasMiddleware
 
     public function update(Request $request, ConsentTemplate $template): JsonResponse
     {
-        abort_unless($request->user()?->hasRole(Role::Admin->value), 403);
+        abort_unless($request->user()?->can(Permissions::CATALOGS_MANAGE), 403);
 
         $data = $request->validate([
             'title' => ['sometimes', 'required', 'string', 'max:255'],

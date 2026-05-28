@@ -48,6 +48,13 @@ Aunque hoy hay un solo cliente (`tenant_id = 1`), todo modelo de negocio usa el 
 
 Consecuencia dura: **toda lectura/escritura pasa por modelos Eloquent**. Nunca `DB::table(...)` crudo — eso brinca el Global Scope y filtra datos entre tenants. Si necesitas raw SQL, primero confirma que sea infraestructura cross-tenant (auth, branding público) o un seeder.
 
+### Migraciones: baseline consolidado + aditivas idempotentes
+
+El esquema base es **una sola migración consolidada** `database/migrations/0001_01_01_000000_create_schema.php` (squash de ~48 originales). Los cambios nuevos van en **migraciones aditivas e idempotentes** (`Schema::hasColumn`/`Schema::hasTable` antes de crear/alterar), nunca editando el squash.
+
+Gotcha en bases que ya existían antes del squash: si la tabla `migrations` no tiene registrado `0001_01_01_000000_create_schema`, `php artisan migrate` intenta recrear `tenants` y falla con "table already exists". Fix sin perder datos: registrar el squash como aplicado y luego migrar —
+`DB::table('migrations')->insert(['migration' => '0001_01_01_000000_create_schema', 'batch' => 1])`. **Nunca** `migrate:fresh`/`migrate:refresh` en una DB con datos.
+
 ### Sistema de roles y permisos
 
 Catálogo central en [backend/app/Support/Permissions.php](backend/app/Support/Permissions.php) con la lista de permisos y la matriz `rol → permisos[]`. **Modelo puramente basado en roles** (sin permisos directos): un usuario tiene N roles, sus permisos efectivos = unión de los permisos sembrados para esos roles.
@@ -104,6 +111,25 @@ Si agregas colores, agrégalos como variables CSS, **no como literales Tailwind*
 
 Alias TS: `@/*` → `./src/*`. Para agregar componentes shadcn: `npx shadcn@latest add <component>`.
 
+### Confirmaciones: `useConfirm`, no `window.confirm`
+
+Para confirmar acciones (eliminar, cancelar) usa el diálogo imperativo `useConfirm()` de [frontend/src/shared/ui/confirm.tsx](frontend/src/shared/ui/confirm.tsx); `ConfirmProvider` ya está montado en `Providers.tsx`:
+
+```ts
+const confirm = useConfirm()
+if (!(await confirm({ title: '¿Eliminar…?', variant: 'destructive', confirmText: 'Eliminar' }))) return
+```
+
+No uses `window.confirm`/`alert` — se reemplazaron por completo. El handler pasa a ser `async`.
+
+### Catálogos tipo select con fallback a texto libre
+
+Varios campos pasaron de texto libre a `<Select>` con catálogo en módulos de constantes del frontend: especialidad ([features/specialists/specialties.ts](frontend/src/features/specialists/specialties.ts)), categoría de tratamiento ([features/treatments/categories.ts](frontend/src/features/treatments/categories.ts)), país/estado ([features/patients/regions.ts](frontend/src/features/patients/regions.ts)). La columna sigue siendo `string` (sin enum estricto en el backend, para no romper datos legacy). Patrón obligado: el form **inyecta el valor actual como opción extra si no está en el catálogo** (no perder texto libre al editar), y se muestra con un helper `*Label()` que cae al valor crudo si no lo reconoce.
+
+### Páginas de impresión / PDF
+
+Los documentos imprimibles son componentes `Print*Page` (ticket de cobro, recibo de comisión, odontograma, endodoncia, receta, estado de cuenta, corte). Se montan **fuera de `AppShell`** (ruta directa bajo `ProtectedRoute` en `Router.tsx`), leen `useBranding()` para el encabezado y auto-disparan `window.print()` ~350 ms tras cargar la data. Se abren con `window.open('/…/imprimir', '_blank')`. Los tickets térmicos respetan la config `branding.ticket_*` (ancho 58/80 mm, logo, pie).
+
 ### Sidebar gating por permisos
 
 Cada item en `AppShell.tsx` declara `perms: Permission[]` (any-of). El filtro `allowed = (item) => !item.perms || canAny(...item.perms)` se aplica recursivamente. Items sin `perms` son visibles a cualquier usuario autenticado (ej. Inicio).
@@ -128,9 +154,11 @@ Cualquier cambio que toque campos de expediente, consentimientos o auditoría de
 
 ## TypeScript
 
-`strict` + `noUncheckedIndexedAccess` + `noUnusedLocals/Parameters` + `verbatimModuleSyntax` (ver [frontend/tsconfig.app.json](frontend/tsconfig.app.json)). `verbatimModuleSyntax` exige `import type` explícito para tipos.
+`strict` + `noUncheckedIndexedAccess` + `noUnusedLocals/Parameters` + `verbatimModuleSyntax` (ver [frontend/tsconfig.app.json](frontend/tsconfig.app.json)). `verbatimModuleSyntax` exige `import type` explícito para tipos. **TypeScript 6.0**: no hay `baseUrl` — el alias `@/*` se resuelve solo con `paths` (no re-agregues `baseUrl` ni `ignoreDeprecations`, `baseUrl` está deprecado).
 
 Tipos del API se mantienen a mano en [frontend/src/shared/types/](frontend/src/shared/types/) — sincronizarlos cuando el backend cambia un Resource. Cuando el contrato se estabilice se puede generar con `openapi-typescript`.
+
+El gate real de correctness es `npm run build` (corre `tsc -b`). `npm run lint` **no está limpio**: hay errores baseline conocidos y no bloqueantes — `react-refresh/only-export-components` en `shared/ui` (exportan componente + variantes/hook), `react-hooks/set-state-in-effect` en form dialogs que resetean estado desde props en `[open]`, y warnings `react-hooks/incompatible-library` del `watch()` de react-hook-form. No los persigas; solo no introduzcas errores nuevos de otra clase.
 
 ## Testing
 

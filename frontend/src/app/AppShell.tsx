@@ -99,8 +99,8 @@ const NAV: NavItem[] = [
         to: '/consentimientos/plantillas',
         label: 'Plantillas consentimiento',
         icon: FileSignature,
-        // users.manage funciona como proxy admin-only: solo admin lo tiene.
-        perms: ['users.manage'],
+        // Catálogo del rol Catálogos (y admin).
+        perms: ['catalogs.manage'],
       },
     ],
   },

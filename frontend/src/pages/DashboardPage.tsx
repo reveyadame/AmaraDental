@@ -214,6 +214,11 @@ export function DashboardPage() {
     me?.permissions.includes('patients.read_basic') ?? false
   const canManageRecalls = me?.permissions.includes('recalls.manage') ?? false
   const canManage = me?.permissions.includes('patients.manage') ?? false
+  // Caja operativa vs. reporte financiero: el panel de caja, el badge y los
+  // saldos requieren rol de caja; la gráfica de ingresos y el desglose de
+  // pagos son reporte (caja o reportes).
+  const showCashPanel = canOperate
+  const showRevenueChart = canOperate || canViewReports
   // Si el usuario no tiene NINGÚN permiso en el dashboard, mostramos un
   // mensaje amistoso pidiendo configurar roles.
   const hasAnyDashboardPerm =
@@ -240,20 +245,22 @@ export function DashboardPage() {
             Hola, {firstName} 👋
           </h1>
         </div>
-        {d?.cash_session ? (
-          <Link to="/caja">
-            <Badge className="bg-emerald-100 text-emerald-900 border border-emerald-200 hover:bg-emerald-100 px-3 py-1.5">
-              <Lock className="size-3.5 mr-1" />
-              Caja abierta · {formatMXN(d.cash_session.payments_total)}
-            </Badge>
-          </Link>
-        ) : canOperate ? (
-          <Link to="/caja">
-            <Badge variant="outline" className="text-muted-foreground px-3 py-1.5">
-              <Lock className="size-3.5 mr-1" />
-              Caja cerrada
-            </Badge>
-          </Link>
+        {canOperate ? (
+          d?.cash_session ? (
+            <Link to="/caja">
+              <Badge className="bg-emerald-100 text-emerald-900 border border-emerald-200 hover:bg-emerald-100 px-3 py-1.5">
+                <Lock className="size-3.5 mr-1" />
+                Caja abierta · {formatMXN(d.cash_session.payments_total)}
+              </Badge>
+            </Link>
+          ) : (
+            <Link to="/caja">
+              <Badge variant="outline" className="text-muted-foreground px-3 py-1.5">
+                <Lock className="size-3.5 mr-1" />
+                Caja cerrada
+              </Badge>
+            </Link>
+          )
         ) : null}
       </header>
 
@@ -388,9 +395,11 @@ export function DashboardPage() {
       ) : null}
 
       {/* Grid principal: gráfica + caja del día */}
+      {showRevenueChart || showCashPanel ? (
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Ingresos últimos 14 días */}
-        <Card className="lg:col-span-2">
+        {showRevenueChart ? (
+        <Card className={showCashPanel ? 'lg:col-span-2' : 'lg:col-span-3'}>
           <CardContent className="p-5 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
@@ -472,8 +481,10 @@ export function DashboardPage() {
             ) : null}
           </CardContent>
         </Card>
+        ) : null}
 
         {/* Caja del día */}
+        {showCashPanel ? (
         <Card>
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center justify-between">
@@ -570,10 +581,19 @@ export function DashboardPage() {
             )}
           </CardContent>
         </Card>
+        ) : null}
       </div>
+      ) : null}
 
       {/* Listas: próximas citas + recalls urgentes */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      {canManageAppointments || canManageRecalls ? (
+      <div
+        className={cn(
+          'grid gap-4',
+          canManageAppointments && canManageRecalls ? 'lg:grid-cols-2' : '',
+        )}
+      >
+        {canManageAppointments ? (
         <Card>
           <CardContent className="p-5 space-y-3">
             <div className="flex items-center justify-between">
@@ -655,7 +675,9 @@ export function DashboardPage() {
             )}
           </CardContent>
         </Card>
+        ) : null}
 
+        {canManageRecalls ? (
         <Card>
           <CardContent className="p-5 space-y-3">
             <div className="flex items-center justify-between">
@@ -737,7 +759,9 @@ export function DashboardPage() {
             )}
           </CardContent>
         </Card>
+        ) : null}
       </div>
+      ) : null}
 
       {/* Saldos pendientes (caja/reportes) + Labs vencidos (labs) */}
       {(canOperate || canViewReports || me?.permissions.includes('labs.manage')) && d ? (
@@ -829,18 +853,20 @@ export function DashboardPage() {
                     Ver pacientes →
                   </Link>
                 </div>
-                <div className="rounded-md border p-3">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    Pagos del día — efectivo
-                  </p>
-                  <p className="text-xl font-semibold tabular-nums">
-                    {formatMXN(d.payments_by_method_today.cash)}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Tarjeta {formatMXN(d.payments_by_method_today.card)} ·
-                    Transf {formatMXN(d.payments_by_method_today.transfer)}
-                  </p>
-                </div>
+                {showRevenueChart ? (
+                  <div className="rounded-md border p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Pagos del día — efectivo
+                    </p>
+                    <p className="text-xl font-semibold tabular-nums">
+                      {formatMXN(d.payments_by_method_today.cash)}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Tarjeta {formatMXN(d.payments_by_method_today.card)} ·
+                      Transf {formatMXN(d.payments_by_method_today.transfer)}
+                    </p>
+                  </div>
+                ) : null}
                 <div className="rounded-md border p-3">
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                     Labs atrasados

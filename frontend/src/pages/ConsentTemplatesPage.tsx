@@ -25,7 +25,8 @@ import {
 } from '@/shared/ui/table'
 
 export function ConsentTemplatesPage() {
-  const { isAdmin } = useAuth()
+  const { isAdmin, can } = useAuth()
+  const canManage = can('catalogs.manage')
   const templates = useConsentTemplatesCatalog()
   const del = useDeleteConsentTemplate()
   const confirm = useConfirm()
@@ -44,8 +45,8 @@ export function ConsentTemplatesPage() {
     )
   }, [templates.data, q])
 
-  // Catálogo reservado al administrador.
-  if (!isAdmin) return <Navigate to="/" replace />
+  // Catálogo del rol Catálogos (catalogs.manage); admin incluido.
+  if (!canManage) return <Navigate to="/" replace />
 
   const onDelete = async (t: ConsentTemplate) => {
     const ok = await confirm({
@@ -159,14 +160,16 @@ export function ConsentTemplatesPage() {
                     <Button size="sm" variant="ghost" onClick={() => setEditing(t)}>
                       <Pencil className="size-4" />
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive"
-                      onClick={() => onDelete(t)}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
+                    {isAdmin ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive"
+                        onClick={() => onDelete(t)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    ) : null}
                   </TableCell>
                 </TableRow>
               ))

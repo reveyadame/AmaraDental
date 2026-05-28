@@ -55,6 +55,14 @@ export function PatientDetailPage() {
   // caja/agenda no ven historia, odontograma, recetas ni consentimientos.
   const canViewClinical = me?.permissions.includes('clinical.view') ?? false
   const canManage = me?.permissions.includes('patients.manage') ?? false
+  // Cada tab se muestra solo si el rol del usuario lo cubre. "Datos" siempre
+  // (cualquiera que llega aquí tiene al menos patients.read_basic).
+  const perms = me?.permissions ?? []
+  const canCash =
+    perms.includes('cash.operate') || perms.includes('charges.create')
+  const canMemberships = perms.includes('memberships.manage')
+  const canLabs = perms.includes('labs.manage')
+  const canRecalls = perms.includes('recalls.manage')
 
   if (!id || Number.isNaN(id)) return <Navigate to="/pacientes" replace />
 
@@ -121,8 +129,12 @@ export function PatientDetailPage() {
             <div className="-mx-1 overflow-x-auto pb-1">
               <TabsList className="w-max">
                 <TabsTrigger value="datos">Datos</TabsTrigger>
-                <TabsTrigger value="cuenta">Estado de cuenta</TabsTrigger>
-                <TabsTrigger value="membresia">Membresía</TabsTrigger>
+                {canCash ? (
+                  <TabsTrigger value="cuenta">Estado de cuenta</TabsTrigger>
+                ) : null}
+                {canMemberships ? (
+                  <TabsTrigger value="membresia">Membresía</TabsTrigger>
+                ) : null}
                 {canViewClinical ? (
                   <>
                     <TabsTrigger value="historia">Historia clínica</TabsTrigger>
@@ -131,8 +143,12 @@ export function PatientDetailPage() {
                     <TabsTrigger value="recetas">Recetas</TabsTrigger>
                   </>
                 ) : null}
-                <TabsTrigger value="laboratorios">Laboratorios</TabsTrigger>
-                <TabsTrigger value="recalls">Recalls</TabsTrigger>
+                {canLabs ? (
+                  <TabsTrigger value="laboratorios">Laboratorios</TabsTrigger>
+                ) : null}
+                {canRecalls ? (
+                  <TabsTrigger value="recalls">Recalls</TabsTrigger>
+                ) : null}
                 {canViewClinical ? (
                   <TabsTrigger value="consentimientos">Consentimientos</TabsTrigger>
                 ) : null}
@@ -245,13 +261,17 @@ export function PatientDetailPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="cuenta">
-              <PatientAccountTab patientId={patient.data.id} />
-            </TabsContent>
+            {canCash ? (
+              <TabsContent value="cuenta">
+                <PatientAccountTab patientId={patient.data.id} />
+              </TabsContent>
+            ) : null}
 
-            <TabsContent value="membresia">
-              <PatientMembershipTab patient={patient.data} />
-            </TabsContent>
+            {canMemberships ? (
+              <TabsContent value="membresia">
+                <PatientMembershipTab patient={patient.data} />
+              </TabsContent>
+            ) : null}
 
             {canViewClinical ? (
               <>
@@ -280,13 +300,17 @@ export function PatientDetailPage() {
               </>
             ) : null}
 
-            <TabsContent value="laboratorios">
-              <PatientLabOrdersTab patient={patient.data} />
-            </TabsContent>
+            {canLabs ? (
+              <TabsContent value="laboratorios">
+                <PatientLabOrdersTab patient={patient.data} />
+              </TabsContent>
+            ) : null}
 
-            <TabsContent value="recalls">
-              <PatientRecallsTab patient={patient.data} />
-            </TabsContent>
+            {canRecalls ? (
+              <TabsContent value="recalls">
+                <PatientRecallsTab patient={patient.data} />
+              </TabsContent>
+            ) : null}
 
             {canViewClinical ? (
               <TabsContent value="consentimientos">
