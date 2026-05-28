@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useDeleteRecall, useRecalls, useUpdateRecall } from './hooks'
 import { AppointmentDialog } from '@/features/agenda/AppointmentDialog'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import type { Patient } from '@/shared/types/patient'
 import {
   RECALL_STATUS_LABELS,
@@ -33,6 +34,7 @@ export function PatientRecallsTab({ patient }: Props) {
   const recalls = useRecalls({ patient_id: patient.id, per_page: 50 })
   const update = useUpdateRecall()
   const remove = useDeleteRecall()
+  const confirm = useConfirm()
   const [scheduling, setScheduling] = useState<Recall | null>(null)
 
   if (recalls.isPending) return <Skeleton className="h-32 w-full" />
@@ -91,8 +93,15 @@ export function PatientRecallsTab({ patient }: Props) {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => {
-                      if (!window.confirm('¿Descartar este recall?')) return
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: '¿Descartar este recall?',
+                        description:
+                          'Dejará de aparecer en los recordatorios pendientes.',
+                        confirmText: 'Descartar',
+                        variant: 'destructive',
+                      })
+                      if (!ok) return
                       update.mutate(
                         { id: r.id, payload: { status: 'dismissed' } },
                         {
@@ -129,8 +138,14 @@ export function PatientRecallsTab({ patient }: Props) {
                   size="sm"
                   variant="ghost"
                   className="text-destructive"
-                  onClick={() => {
-                    if (!window.confirm('¿Eliminar este recall?')) return
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: '¿Eliminar este recall?',
+                      description: 'Esta acción no se puede deshacer.',
+                      confirmText: 'Eliminar',
+                      variant: 'destructive',
+                    })
+                    if (!ok) return
                     remove.mutate(r.id, {
                       onSuccess: () => toast.success('Recall eliminado'),
                       onError: () => toast.error('No fue posible'),

@@ -35,6 +35,12 @@ export interface Branding {
   color_primary_foreground: string
   color_secondary: string
   color_sidebar?: string | null
+  // Colores finos del menú lateral. Si quedan nulos, la UI deriva del tema.
+  sidebar_item_bg?: string | null
+  sidebar_item_color?: string | null
+  sidebar_hover_bg?: string | null
+  sidebar_active_bg?: string | null
+  sidebar_active_color?: string | null
   color_header?: string | null
   color_accent?: string | null
   razon_social?: string | null

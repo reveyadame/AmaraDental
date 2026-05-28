@@ -45,6 +45,15 @@
   --header-bg: var(--background);
   --header-fg: var(--foreground);
   --header-fg-muted: var(--muted-foreground);
+
+  /* Ítems del menú lateral. Defaults derivados del tema; el tenant los
+     puede personalizar (fondo, texto, hover y estado activo). */
+  --sidebar-item-bg: transparent;
+  --sidebar-item-fg: var(--sidebar-fg-muted);
+  --sidebar-item-hover-bg: color-mix(in srgb, var(--sidebar-fg) 8%, transparent);
+  --sidebar-item-hover-fg: var(--sidebar-fg);
+  --sidebar-active-bg: color-mix(in srgb, var(--primary) 15%, transparent);
+  --sidebar-active-fg: var(--primary);
 }
 
 .dark {

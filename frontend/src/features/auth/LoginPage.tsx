@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Navigate } from 'react-router-dom'
-import { Loader2, LogIn } from 'lucide-react'
+import { Eye, EyeOff, Loader2, LogIn } from 'lucide-react'
 import { useBranding, useLogin, useMe } from './hooks'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -21,6 +22,7 @@ export function LoginPage() {
   const { data: me, isPending } = useMe()
   const { data: branding } = useBranding()
   const loginMutation = useLogin()
+  const [showPassword, setShowPassword] = useState(false)
 
   const {
     register,
@@ -84,13 +86,30 @@ export function LoginPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  {...register('password')}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    className="pr-10"
+                    {...register('password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-0 top-0 grid h-full w-10 place-items-center text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </button>
+                </div>
                 {errors.password ? (
                   <p className="text-xs text-destructive">{errors.password.message}</p>
                 ) : null}

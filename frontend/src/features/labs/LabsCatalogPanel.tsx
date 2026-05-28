@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useDeleteLab, useLabs } from './hooks'
 import { LabFormDialog } from './LabFormDialog'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
 import type { Lab } from '@/shared/types/lab'
 import { Button } from '@/shared/ui/button'
@@ -28,6 +29,7 @@ export function LabsCatalogPanel() {
   const debounced = useDebouncedValue(q, 350)
   const labs = useLabs({ q: debounced })
   const remove = useDeleteLab()
+  const confirm = useConfirm()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Lab | null>(null)
 
@@ -41,8 +43,14 @@ export function LabsCatalogPanel() {
     setEditing(l)
     setOpen(true)
   }
-  const onDelete = (l: Lab) => {
-    if (!window.confirm(`¿Eliminar el laboratorio "${l.name}"?`)) return
+  const onDelete = async (l: Lab) => {
+    const ok = await confirm({
+      title: `¿Eliminar el laboratorio "${l.name}"?`,
+      description: 'Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     remove.mutate(l.id, {
       onSuccess: () => toast.success('Laboratorio eliminado'),
       onError: () => toast.error('No fue posible eliminar'),

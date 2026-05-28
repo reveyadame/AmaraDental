@@ -4,7 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { useCreatePatient, useUpdatePatient } from './hooks'
-import type { Patient } from '@/shared/types/patient'
+import type { CountryCode, MaritalStatus, Patient } from '@/shared/types/patient'
+import { MARITAL_STATUS_LABELS } from '@/shared/types/patient'
+import {
+  COUNTRIES,
+  STATES_BY_COUNTRY,
+  inferCountryFromState,
+} from './regions'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
@@ -37,6 +43,7 @@ const patientSchema = z.object({
   last_name: z.string().min(1, 'Requerido').max(120),
   date_of_birth: z.string().min(1, 'Requerido'),
   gender: z.enum(['M', 'F', 'Otro']),
+  marital_status: z.string().max(20),
   curp: z.string().max(18),
   rfc: z.string().max(13),
   email: z.string().max(255).refine((v) => v === '' || /.+@.+\..+/.test(v), 'Correo inválido'),
@@ -45,6 +52,7 @@ const patientSchema = z.object({
   address: z.string().max(500),
   city: z.string().max(120),
   state: z.string().max(120),
+  country: z.string().max(2),
   postal_code: z.string().max(10),
   emergency_contact_name: z.string().max(160),
   emergency_contact_phone: z.string().max(32),
@@ -68,6 +76,7 @@ function emptyDefaults(): PatientForm {
     last_name: '',
     date_of_birth: '',
     gender: 'F',
+    marital_status: '',
     curp: '',
     rfc: '',
     email: '',
@@ -76,6 +85,7 @@ function emptyDefaults(): PatientForm {
     address: '',
     city: '',
     state: '',
+    country: 'MX',
     postal_code: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
@@ -91,6 +101,7 @@ function patientToForm(p: Patient): PatientForm {
     last_name: p.last_name,
     date_of_birth: p.date_of_birth ?? '',
     gender: p.gender,
+    marital_status: p.marital_status ?? '',
     curp: p.curp ?? '',
     rfc: p.rfc ?? '',
     email: p.email ?? '',
@@ -99,6 +110,7 @@ function patientToForm(p: Patient): PatientForm {
     address: p.address ?? '',
     city: p.city ?? '',
     state: p.state ?? '',
+    country: p.country ?? inferCountryFromState(p.state) ?? '',
     postal_code: p.postal_code ?? '',
     emergency_contact_name: p.emergency_contact_name ?? '',
     emergency_contact_phone: p.emergency_contact_phone ?? '',
@@ -138,9 +150,27 @@ export function PatientFormDialog({ open, onOpenChange, patient, onSaved }: Prop
   }, [patient, reset])
 
   const gender = watch('gender')
+  const maritalStatus = watch('marital_status')
+  const country = watch('country')
+  const state = watch('state')
+
+  const stateOptions = country
+    ? STATES_BY_COUNTRY[country as CountryCode] ?? []
+    : []
+  // Conserva un estado "legacy" (texto libre previo) como opción si no está
+  // en el catálogo del país seleccionado, para no perderlo al editar.
+  const showLegacyState = !!state && !stateOptions.includes(state)
+
+  const onCountryChange = (v: string) => {
+    const next = v === 'none' ? '' : v
+    setValue('country', next)
+    const opts = next ? STATES_BY_COUNTRY[next as CountryCode] ?? [] : []
+    if (state && !opts.includes(state)) setValue('state', '')
+  }
 
   const onSubmit = (values: PatientForm) => {
     if (values.curp) values.curp = values.curp.toUpperCase()
+    if (values.rfc) values.rfc = values.rfc.toUpperCase()
     const payload = stripEmpty(values)
     const mutation = isEdit ? update : create
     mutation.mutate(payload as never, {
@@ -180,21 +210,27 @@ export function PatientFormDialog({ open, onOpenChange, patient, onSaved }: Prop
             </legend>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="first_name">Nombre(s)</Label>
+                <Label htmlFor="first_name">
+                  Nombre(s) <span className="text-destructive">*</span>
+                </Label>
                 <Input id="first_name" {...register('first_name')} />
                 {errors.first_name ? (
                   <p className="text-xs text-destructive">{errors.first_name.message}</p>
                 ) : null}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="last_name">Apellidos</Label>
+                <Label htmlFor="last_name">
+                  Apellidos <span className="text-destructive">*</span>
+                </Label>
                 <Input id="last_name" {...register('last_name')} />
                 {errors.last_name ? (
                   <p className="text-xs text-destructive">{errors.last_name.message}</p>
                 ) : null}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="date_of_birth">Fecha de nacimiento</Label>
+                <Label htmlFor="date_of_birth">
+                  Fecha de nacimiento <span className="text-destructive">*</span>
+                </Label>
                 <Input id="date_of_birth" type="date" {...register('date_of_birth')} />
                 {errors.date_of_birth ? (
                   <p className="text-xs text-destructive">{errors.date_of_birth.message}</p>
@@ -214,13 +250,36 @@ export function PatientFormDialog({ open, onOpenChange, patient, onSaved }: Prop
                 </Select>
               </div>
               <div className="space-y-1.5">
+                <Label>Estado civil</Label>
+                <Select
+                  value={maritalStatus || 'none'}
+                  onValueChange={(v) =>
+                    setValue('marital_status', v === 'none' ? '' : v)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sin especificar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin especificar</SelectItem>
+                    {(Object.keys(MARITAL_STATUS_LABELS) as MaritalStatus[]).map(
+                      (s) => (
+                        <SelectItem key={s} value={s}>
+                          {MARITAL_STATUS_LABELS[s]}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
                 <Label htmlFor="curp">CURP</Label>
-                <Input id="curp" maxLength={18} {...register('curp')} />
+                <Input id="curp" maxLength={18} className="uppercase" {...register('curp')} />
                 {errors.curp ? <p className="text-xs text-destructive">{errors.curp.message}</p> : null}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="rfc">RFC</Label>
-                <Input id="rfc" maxLength={13} {...register('rfc')} />
+                <Input id="rfc" maxLength={13} className="uppercase" {...register('rfc')} />
               </div>
             </div>
           </fieldset>
@@ -247,25 +306,66 @@ export function PatientFormDialog({ open, onOpenChange, patient, onSaved }: Prop
                 <Label htmlFor="occupation">Ocupación</Label>
                 <Input id="occupation" {...register('occupation')} />
               </div>
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-4">
+            <legend className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Domicilio
+            </legend>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2 space-y-1.5">
-                <Label htmlFor="address">Domicilio</Label>
-                <Input id="address" {...register('address')} />
+                <Label htmlFor="address">Calle y número</Label>
+                <Input id="address" {...register('address')} placeholder="Av. Reforma 123, Col. Centro" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="city">Ciudad</Label>
+                <Label>País</Label>
+                <Select value={country || 'none'} onValueChange={onCountryChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sin especificar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin especificar</SelectItem>
+                    {COUNTRIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Estado</Label>
+                <Select
+                  value={state || 'none'}
+                  onValueChange={(v) => setValue('state', v === 'none' ? '' : v)}
+                  disabled={!country}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={country ? 'Selecciona estado' : 'Elige primero el país'}
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64">
+                    <SelectItem value="none">Sin especificar</SelectItem>
+                    {showLegacyState ? (
+                      <SelectItem value={state}>{state}</SelectItem>
+                    ) : null}
+                    {stateOptions.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="city">Ciudad / Municipio</Label>
                 <Input id="city" {...register('city')} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="state">Estado</Label>
-                <Input id="state" {...register('state')} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="postal_code">C.P.</Label>
                 <Input id="postal_code" maxLength={10} {...register('postal_code')} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="referred_by">Referido por</Label>
-                <Input id="referred_by" {...register('referred_by')} />
               </div>
             </div>
           </fieldset>
@@ -286,10 +386,21 @@ export function PatientFormDialog({ open, onOpenChange, patient, onSaved }: Prop
             </div>
           </fieldset>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="notes">Notas internas</Label>
-            <Textarea id="notes" rows={3} {...register('notes')} />
-          </div>
+          <fieldset className="space-y-4">
+            <legend className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Adicional
+            </legend>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="referred_by">Referido por</Label>
+                <Input id="referred_by" {...register('referred_by')} placeholder="Paciente, dentista, redes…" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="notes">Notas internas</Label>
+                <Textarea id="notes" rows={3} {...register('notes')} />
+              </div>
+            </div>
+          </fieldset>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

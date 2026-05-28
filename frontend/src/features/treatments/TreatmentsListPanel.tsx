@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useDeleteTreatment, useTreatments } from './hooks'
 import { TreatmentFormDialog } from './TreatmentFormDialog'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Card } from '@/shared/ui/card'
@@ -37,6 +38,7 @@ export function TreatmentsListPanel() {
   const debounced = useDebouncedValue(query, 350)
   const treatments = useTreatments({ q: debounced })
   const remove = useDeleteTreatment()
+  const confirm = useConfirm()
 
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Treatment | null>(null)
@@ -63,8 +65,14 @@ export function TreatmentsListPanel() {
     setOpen(true)
   }
 
-  const onDelete = (t: Treatment) => {
-    if (!window.confirm(`¿Eliminar tratamiento "${t.name}"?`)) return
+  const onDelete = async (t: Treatment) => {
+    const ok = await confirm({
+      title: `¿Eliminar tratamiento "${t.name}"?`,
+      description: 'Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     remove.mutate(t.id, {
       onSuccess: () => toast.success('Tratamiento eliminado'),
       onError: () => toast.error('No fue posible eliminar'),

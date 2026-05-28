@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { useCancelMembership, useCurrentPatientMembership } from './hooks'
 import { SellMembershipDialog } from './SellMembershipDialog'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import type { Patient } from '@/shared/types/patient'
 import type { MembershipUsage } from '@/shared/types/membership'
 import { Button } from '@/shared/ui/button'
@@ -46,6 +47,7 @@ export function PatientMembershipTab({ patient }: Props) {
   const canSell = me?.permissions.includes('memberships.manage') ?? false
   const membership = useCurrentPatientMembership(patient.id)
   const cancel = useCancelMembership()
+  const confirm = useConfirm()
   const [open, setOpen] = useState(false)
 
   if (membership.isPending) {
@@ -81,9 +83,15 @@ export function PatientMembershipTab({ patient }: Props) {
   const left = daysLeft(m.ends_on)
   const expiringSoon = left >= 0 && left <= 30
 
-  const onCancel = () => {
-    if (!window.confirm('¿Cancelar esta membresía? Esto no genera devolución automática.'))
-      return
+  const onCancel = async () => {
+    const ok = await confirm({
+      title: '¿Cancelar esta membresía?',
+      description: 'Esto no genera devolución automática.',
+      confirmText: 'Cancelar membresía',
+      cancelText: 'Volver',
+      variant: 'destructive',
+    })
+    if (!ok) return
     cancel.mutate(m.id, {
       onSuccess: () => toast.success('Membresía cancelada'),
       onError: () => toast.error('No fue posible cancelar'),

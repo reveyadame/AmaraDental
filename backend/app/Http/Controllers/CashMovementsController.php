@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
 use App\Models\CashExpense;
 use App\Models\ChargePayment;
+use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -14,12 +14,11 @@ use Illuminate\Routing\Controllers\Middleware;
 
 /**
  * Vista consolidada de movimientos de caja (pagos + egresos) cruzando todas
- * las sesiones del tenant. Pensada como herramienta administrativa para
- * auditar y cancelar errores: el admin puede ubicar un movimiento por fecha
- * o por paciente y revertirlo desde aquí.
+ * las sesiones del tenant. Pensada para auditar y revertir errores: quien
+ * opera caja puede ubicar un movimiento por fecha o por paciente.
  *
- * Solo admin (las acciones de cancelar/eliminar también son admin-only en
- * sus respectivos controladores).
+ * Lectura disponible para el rol Caja (cash.operate). La eliminación sigue
+ * siendo admin-only en sus respectivos controladores.
  */
 class CashMovementsController extends Controller implements HasMiddleware
 {
@@ -31,7 +30,7 @@ class CashMovementsController extends Controller implements HasMiddleware
 
     public function index(Request $request): JsonResponse
     {
-        abort_unless($request->user()?->hasRole(Role::Admin->value), 403);
+        abort_unless($request->user()?->can(Permissions::CASH_OPERATE), 403);
 
         $typeFilter = $request->string('type')->toString(); // all | payment | expense
         $methodFilter = $request->string('method')->toString(); // cash | card | transfer

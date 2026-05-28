@@ -3,13 +3,11 @@ import { Navigate } from 'react-router-dom'
 import {
   ArrowDownCircle,
   ArrowUpCircle,
-  Ban,
   Search,
   Trash2,
   Wallet,
 } from 'lucide-react'
-import { toast } from 'sonner'
-import { useCancelCharge, useCashMovements } from '@/features/cash/hooks'
+import { useCashMovements } from '@/features/cash/hooks'
 import { DeleteMovementDialog } from '@/features/cash/DeleteMovementDialog'
 import { useAuth } from '@/shared/auth/permissions'
 import { Button } from '@/shared/ui/button'
@@ -70,9 +68,10 @@ function formatDateTime(iso: string | null): string {
 type MovementType = 'all' | 'payment' | 'expense'
 type MethodFilter = 'all' | 'cash' | 'card' | 'transfer'
 
+const PER_PAGE = 25
+
 export function CashMovementsPage() {
-  const { isAdmin } = useAuth()
-  if (!isAdmin) return <Navigate to="/" replace />
+  const { can, isAdmin } = useAuth()
 
   const [dateFrom, setDateFrom] = useState<string>(firstOfMonthISO())
   const [dateTo, setDateTo] = useState<string>(todayISO())
@@ -89,7 +88,7 @@ export function CashMovementsPage() {
     method: method === 'all' ? undefined : method,
     q: debouncedQ || undefined,
     page,
-    per_page: 50,
+    per_page: PER_PAGE,
   }
   const movements = useCashMovements(filters)
 
@@ -99,8 +98,16 @@ export function CashMovementsPage() {
     label: string
   } | null>(null)
 
+  // Disponible para el rol Caja (cash.operate); eliminar es solo admin.
+  const canView = can('cash.operate')
+  const canDelete = isAdmin
+  if (!canView) return <Navigate to="/" replace />
+
   const data = movements.data?.data ?? []
-  const sums = movements.data?.meta.sums
+  const meta = movements.data?.meta
+  const sums = meta?.sums
+  // Columnas visibles: la de acciones solo aplica si el usuario puede eliminar.
+  const colCount = canDelete ? 7 : 6
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10 space-y-6">
@@ -249,21 +256,21 @@ export function CashMovementsPage() {
               <TableHead className="text-right">Monto</TableHead>
               <TableHead>Concepto / Paciente</TableHead>
               <TableHead>Registrado por</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
+              {canDelete ? <TableHead className="text-right">Acciones</TableHead> : null}
             </TableRow>
           </TableHeader>
           <TableBody>
             {movements.isPending ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell colSpan={7}>
+                  <TableCell colSpan={colCount}>
                     <Skeleton className="h-6 w-full" />
                   </TableCell>
                 </TableRow>
               ))
             ) : data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-14 text-center">
+                <TableCell colSpan={colCount} className="py-14 text-center">
                   <p className="text-sm text-muted-foreground">
                     Sin movimientos en este rango.
                   </p>
@@ -334,18 +341,9 @@ export function CashMovementsPage() {
                       <p className="text-[10px] text-rose-700">corte cerrado</p>
                     ) : null}
                   </TableCell>
-                  <TableCell className="text-right">
-                    {m.cash_session_status === 'open' ? (
-                      <div className="flex items-center justify-end gap-1">
-                        {m.type === 'payment' &&
-                        m.charge_id &&
-                        m.charge_status !== 'cancelled' ? (
-                          <CancelChargeButton
-                            chargeId={m.charge_id}
-                            chargeCode={m.charge_code}
-                            onSuccess={() => movements.refetch()}
-                          />
-                        ) : null}
+                  {canDelete ? (
+                    <TableCell className="text-right">
+                      {m.cash_session_status === 'open' ? (
                         <Button
                           size="sm"
                           variant="ghost"
@@ -364,16 +362,16 @@ export function CashMovementsPage() {
                         >
                           <Trash2 className="size-3.5" />
                         </Button>
-                      </div>
-                    ) : (
-                      <span
-                        className="text-[10px] uppercase tracking-wide text-muted-foreground"
-                        title="No se puede modificar: el corte de caja ya está cerrado."
-                      >
-                        Corte cerrado
-                      </span>
-                    )}
-                  </TableCell>
+                      ) : (
+                        <span
+                          className="text-[10px] uppercase tracking-wide text-muted-foreground"
+                          title="No se puede eliminar: el corte de caja ya está cerrado."
+                        >
+                          Corte cerrado
+                        </span>
+                      )}
+                    </TableCell>
+                  ) : null}
                 </TableRow>
               ))
             )}
@@ -381,27 +379,39 @@ export function CashMovementsPage() {
         </Table>
       </Card>
 
-      {movements.data && movements.data.meta.last_page > 1 ? (
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            Anterior
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            Página {movements.data.meta.current_page} de {movements.data.meta.last_page}
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={page >= movements.data.meta.last_page}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Siguiente
-          </Button>
+      {meta && meta.total > 0 ? (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            Mostrando{' '}
+            <span className="font-medium text-foreground">
+              {(meta.current_page - 1) * meta.per_page + 1}–
+              {Math.min(meta.current_page * meta.per_page, meta.total)}
+            </span>{' '}
+            de <span className="font-medium text-foreground">{meta.total}</span> movimientos
+          </p>
+          {meta.last_page > 1 ? (
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Anterior
+              </Button>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                Página {meta.current_page} de {meta.last_page}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page >= meta.last_page}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Siguiente
+              </Button>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -417,51 +427,5 @@ export function CashMovementsPage() {
         />
       ) : null}
     </div>
-  )
-}
-
-/**
- * Botón aislado para cancelar un cobro desde la lista. Usa su propio
- * `useCancelCharge` ligado al charge_id correcto.
- */
-function CancelChargeButton({
-  chargeId,
-  chargeCode,
-  onSuccess,
-}: {
-  chargeId: number
-  chargeCode: string | null
-  onSuccess: () => void
-}) {
-  const cancel = useCancelCharge(chargeId)
-
-  const onClick = () => {
-    if (
-      !window.confirm(
-        `¿Cancelar el cobro ${chargeCode ?? `#${chargeId}`}? Quedará con estado "Cancelado" y los items vuelven a estar disponibles.`,
-      )
-    )
-      return
-    cancel.mutate(undefined, {
-      onSuccess: () => {
-        toast.success('Cobro cancelado')
-        onSuccess()
-      },
-      onError: () => toast.error('No fue posible cancelar el cobro'),
-    })
-  }
-
-  return (
-    <Button
-      size="sm"
-      variant="ghost"
-      className="text-amber-700"
-      onClick={onClick}
-      disabled={cancel.isPending}
-      aria-label="Cancelar cobro"
-      title="Cancelar cobro"
-    >
-      <Ban className="size-3.5" />
-    </Button>
   )
 }

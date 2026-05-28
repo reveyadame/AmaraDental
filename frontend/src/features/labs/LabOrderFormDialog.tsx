@@ -38,7 +38,7 @@ interface Props {
 interface FormState {
   patient: Patient | null
   treatment_id: string
-  dentist_user_id: string
+  specialist_id: string
   lab_id: string
   lab_name: string
   work_type: string
@@ -56,7 +56,7 @@ function emptyForm(): FormState {
   return {
     patient: null,
     treatment_id: '',
-    dentist_user_id: '',
+    specialist_id: '',
     lab_id: '',
     lab_name: '',
     work_type: '',
@@ -99,8 +99,8 @@ export function LabOrderFormDialog({
             } as unknown as Patient)
           : null,
         treatment_id: order.treatment_id ? String(order.treatment_id) : '',
-        dentist_user_id: order.dentist_user_id
-          ? String(order.dentist_user_id)
+        specialist_id: order.specialist_id
+          ? String(order.specialist_id)
           : '',
         lab_id: order.lab_id ? String(order.lab_id) : '',
         lab_name: order.lab_name,
@@ -132,7 +132,7 @@ export function LabOrderFormDialog({
     const payload = {
       patient_id: form.patient.id,
       treatment_id: form.treatment_id ? Number(form.treatment_id) : null,
-      dentist_user_id: form.dentist_user_id ? Number(form.dentist_user_id) : null,
+      specialist_id: form.specialist_id ? Number(form.specialist_id) : null,
       lab_id: form.lab_id ? Number(form.lab_id) : null,
       lab_name: form.lab_name.trim() || null,
       work_type: form.work_type.trim() || null,
@@ -261,9 +261,9 @@ export function LabOrderFormDialog({
             <div className="space-y-1.5">
               <Label>Dentista</Label>
               <Select
-                value={form.dentist_user_id || 'none'}
+                value={form.specialist_id || 'none'}
                 onValueChange={(v) =>
-                  setForm((f) => ({ ...f, dentist_user_id: v === 'none' ? '' : v }))
+                  setForm((f) => ({ ...f, specialist_id: v === 'none' ? '' : v }))
                 }
               >
                 <SelectTrigger>
@@ -335,7 +335,7 @@ export function LabOrderFormDialog({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="cost">Costo (MXN)</Label>
+              <Label htmlFor="cost">Costo (MXN) — opcional</Label>
               <Input
                 id="cost"
                 type="number"
@@ -344,6 +344,9 @@ export function LabOrderFormDialog({
                 onChange={(e) => setForm((f) => ({ ...f, cost: e.target.value }))}
                 placeholder="0.00"
               />
+              <p className="text-[10px] text-muted-foreground">
+                Déjalo vacío si aún no conoces el costo; puedes registrarlo después.
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label>Estado</Label>

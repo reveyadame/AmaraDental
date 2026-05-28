@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { useCancelMembership, useMemberships } from './hooks'
 import { SellMembershipDialog } from './SellMembershipDialog'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
 import { Badge } from '@/shared/ui/badge'
@@ -71,15 +72,18 @@ export function MembershipsListPanel() {
     per_page: 50,
   })
   const cancel = useCancelMembership()
+  const confirm = useConfirm()
   const [open, setOpen] = useState(false)
 
-  const onCancel = (m: Membership) => {
-    if (
-      !window.confirm(
-        `¿Cancelar la membresía de ${m.patient_name}? Esto no genera devolución automática.`,
-      )
-    )
-      return
+  const onCancel = async (m: Membership) => {
+    const ok = await confirm({
+      title: `¿Cancelar la membresía de ${m.patient_name}?`,
+      description: 'Esto no genera devolución automática.',
+      confirmText: 'Cancelar membresía',
+      cancelText: 'Volver',
+      variant: 'destructive',
+    })
+    if (!ok) return
     cancel.mutate(m.id, {
       onSuccess: () => toast.success('Membresía cancelada'),
       onError: () => toast.error('No fue posible cancelar'),

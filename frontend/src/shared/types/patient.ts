@@ -1,5 +1,23 @@
 export type Gender = 'M' | 'F' | 'Otro'
 export type PregnancyStatus = 'no' | 'si' | 'posible' | 'na'
+export type CountryCode = 'MX' | 'US'
+
+export type MaritalStatus =
+  | 'soltero'
+  | 'casado'
+  | 'union_libre'
+  | 'divorciado'
+  | 'viudo'
+  | 'separado'
+
+export const MARITAL_STATUS_LABELS: Record<MaritalStatus, string> = {
+  soltero: 'Soltero(a)',
+  casado: 'Casado(a)',
+  union_libre: 'Unión libre',
+  divorciado: 'Divorciado(a)',
+  viudo: 'Viudo(a)',
+  separado: 'Separado(a)',
+}
 
 export interface Patient {
   id: number
@@ -9,6 +27,7 @@ export interface Patient {
   date_of_birth: string | null
   age: number | null
   gender: Gender
+  marital_status: MaritalStatus | null
   curp: string | null
   rfc: string | null
   email: string | null
@@ -17,6 +36,7 @@ export interface Patient {
   address: string | null
   city: string | null
   state: string | null
+  country: CountryCode | null
   postal_code: string | null
   emergency_contact_name: string | null
   emergency_contact_phone: string | null

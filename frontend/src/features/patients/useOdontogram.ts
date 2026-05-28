@@ -1,8 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getOdontogram, updateTooth } from './odontogramApi'
-import type { ToothState, UpdateToothStatePayload } from '@/shared/types/odontogram'
+import {
+  addTreatmentLogEntry,
+  deleteTreatmentLogEntry,
+  getOdontogram,
+  getTreatmentLog,
+  updateOdontogramDiagnosis,
+  updateTooth,
+} from './odontogramApi'
+import type { OdontogramResponse } from '@/shared/types/odontogram'
+import type {
+  CreateTreatmentLogPayload,
+  ToothState,
+  UpdateToothStatePayload,
+} from '@/shared/types/odontogram'
 
 const key = (patientId: number) => ['patients', patientId, 'odontogram'] as const
+const logKey = (patientId: number) =>
+  ['patients', patientId, 'treatment-log'] as const
 
 export function useOdontogram(patientId: number) {
   return useQuery({
@@ -34,5 +48,45 @@ export function useUpdateTooth(patientId: number) {
         }
       })
     },
+  })
+}
+
+export function useUpdateOdontogramDiagnosis(patientId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (diagnosis: string | null) =>
+      updateOdontogramDiagnosis(patientId, diagnosis),
+    onSuccess: (general_diagnosis) => {
+      qc.setQueryData(
+        key(patientId),
+        (prev: OdontogramResponse | undefined) =>
+          prev ? { ...prev, meta: { ...prev.meta, general_diagnosis } } : prev,
+      )
+    },
+  })
+}
+
+export function useTreatmentLog(patientId: number) {
+  return useQuery({
+    queryKey: logKey(patientId),
+    queryFn: () => getTreatmentLog(patientId),
+    staleTime: 30_000,
+  })
+}
+
+export function useAddTreatmentLogEntry(patientId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateTreatmentLogPayload) =>
+      addTreatmentLogEntry(patientId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: logKey(patientId) }),
+  })
+}
+
+export function useDeleteTreatmentLogEntry(patientId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (entryId: number) => deleteTreatmentLogEntry(patientId, entryId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: logKey(patientId) }),
   })
 }

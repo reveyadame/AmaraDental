@@ -18,6 +18,7 @@ import { LabOrderFormDialog } from '@/features/labs/LabOrderFormDialog'
 import { LabOrderStatusMenu } from '@/features/labs/LabOrderStatusMenu'
 import { LabsCatalogPanel } from '@/features/labs/LabsCatalogPanel'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
@@ -83,6 +84,7 @@ export function LabOrdersPage() {
   const [editing, setEditing] = useState<LabOrder | null>(null)
   const debouncedQ = useDebouncedValue(q, 350)
   const remove = useDeleteLabOrder()
+  const confirm = useConfirm()
 
   const query = useMemo(() => {
     if (statusFilter === 'open') {
@@ -115,9 +117,14 @@ export function LabOrdersPage() {
     setEditing(o)
     setOpen(true)
   }
-  const onDelete = (o: LabOrder) => {
-    if (!window.confirm(`¿Eliminar la orden de ${o.patient_name ?? 'paciente'}?`))
-      return
+  const onDelete = async (o: LabOrder) => {
+    const ok = await confirm({
+      title: `¿Eliminar la orden de ${o.patient_name ?? 'paciente'}?`,
+      description: 'Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     remove.mutate(o.id, {
       onSuccess: () => toast.success('Orden eliminada'),
       onError: () => toast.error('No fue posible eliminar'),
@@ -239,9 +246,9 @@ export function LabOrdersPage() {
                       >
                         {o.patient_name ?? '—'}
                       </Link>
-                      {o.dentist_name ? (
+                      {o.specialist_name ? (
                         <p className="text-xs text-muted-foreground">
-                          {o.dentist_name}
+                          {o.specialist_name}
                         </p>
                       ) : null}
                     </TableCell>

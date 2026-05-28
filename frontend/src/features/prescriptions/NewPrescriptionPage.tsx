@@ -8,6 +8,7 @@ import { PrescriptionTemplateFormDialog } from './PrescriptionTemplateFormDialog
 import { usePatient } from '@/features/patients/hooks'
 import { useSpecialists } from '@/features/specialists/hooks'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { ROUTES_OF_ADMINISTRATION } from '@/shared/types/prescription'
 import type { PrescriptionTemplate } from '@/shared/types/prescription'
 import { Button } from '@/shared/ui/button'
@@ -60,6 +61,7 @@ export function NewPrescriptionPage() {
   const patient = usePatient(patientId)
   const specialists = useSpecialists()
   const create = useCreatePrescription(patientId ?? 0)
+  const confirm = useConfirm()
 
   const canCreate = me?.permissions.includes('prescriptions.create') ?? false
 
@@ -88,17 +90,18 @@ export function NewPrescriptionPage() {
   const removeItem = (uid: string) =>
     setItems((prev) => (prev.length > 1 ? prev.filter((it) => it.uid !== uid) : prev))
 
-  const applyTemplate = (template: PrescriptionTemplate) => {
+  const applyTemplate = async (template: PrescriptionTemplate) => {
     const hasContent = items.some(
       (it) => it.medication.trim() || it.dosage.trim() || it.frequency.trim(),
     )
-    if (
-      hasContent &&
-      !window.confirm(
-        'Cargar la plantilla reemplazará los medicamentos actuales. ¿Continuar?',
-      )
-    ) {
-      return
+    if (hasContent) {
+      const ok = await confirm({
+        title: 'Cargar plantilla',
+        description:
+          'Esto reemplazará los medicamentos actuales. ¿Deseas continuar?',
+        confirmText: 'Reemplazar',
+      })
+      if (!ok) return
     }
     setItems(
       template.items.map((it) => ({

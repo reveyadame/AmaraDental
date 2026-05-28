@@ -23,6 +23,8 @@ use App\Http\Controllers\LabsController;
 use App\Http\Controllers\MedicalHistoryController;
 use App\Http\Controllers\MembershipPlansController;
 use App\Http\Controllers\MembershipsController;
+use App\Http\Controllers\DentalTreatmentLogController;
+use App\Http\Controllers\EndodonticRecordsController;
 use App\Http\Controllers\OdontogramController;
 use App\Http\Controllers\PatientsController;
 use App\Http\Controllers\PrescriptionsController;
@@ -69,8 +71,20 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     // Odontograma del paciente.
     Route::get('patients/{patient}/odontogram', [OdontogramController::class, 'index']);
+    Route::put('patients/{patient}/odontogram-diagnosis', [OdontogramController::class, 'updateDiagnosis']);
     Route::put('patients/{patient}/odontogram/{tooth}', [OdontogramController::class, 'update'])
         ->whereNumber('tooth');
+
+    // Bitácora de tratamientos del odontograma.
+    Route::get('patients/{patient}/treatment-log', [DentalTreatmentLogController::class, 'index']);
+    Route::post('patients/{patient}/treatment-log', [DentalTreatmentLogController::class, 'store']);
+    Route::delete('patients/{patient}/treatment-log/{logEntry}', [DentalTreatmentLogController::class, 'destroy']);
+
+    // Historia clínica de endodoncia.
+    Route::get('patients/{patient}/endodontic-records', [EndodonticRecordsController::class, 'index']);
+    Route::post('patients/{patient}/endodontic-records', [EndodonticRecordsController::class, 'store']);
+    Route::put('patients/{patient}/endodontic-records/{record}', [EndodonticRecordsController::class, 'update']);
+    Route::delete('patients/{patient}/endodontic-records/{record}', [EndodonticRecordsController::class, 'destroy']);
 
     // Consentimientos por paciente.
     Route::get('patients/{patient}/consents', [ConsentsController::class, 'index']);

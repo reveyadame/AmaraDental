@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react'
 import { usePatient } from './hooks'
 import { useOdontogram } from './useOdontogram'
 import { Tooth } from './Tooth'
+import { WholeStateGlyph } from './odontogramSymbols'
 import { useBranding } from '@/shared/theme/ThemeProvider'
 import {
   FACE_STATE_COLORS,
@@ -160,6 +161,16 @@ export function PrintOdontogramPage() {
           </p>
         </section>
 
+        {/* Diagnóstico general */}
+        {odontogram.data!.meta.general_diagnosis ? (
+          <section className="space-y-1">
+            <p className="text-sm font-semibold">Diagnóstico general</p>
+            <p className="text-sm whitespace-pre-wrap text-gray-800">
+              {odontogram.data!.meta.general_diagnosis}
+            </p>
+          </section>
+        ) : null}
+
         {/* Leyenda */}
         <section className="grid grid-cols-2 gap-4 text-xs">
           <div>
@@ -180,7 +191,10 @@ export function PrintOdontogramPage() {
             <p className="font-semibold mb-1">Estado global</p>
             <ul className="grid grid-cols-2 gap-x-3 gap-y-1">
               {WHOLE_STATES.map((s) => (
-                <li key={s}>{WHOLE_STATE_LABELS[s]}</li>
+                <li key={s} className="flex items-center gap-1.5">
+                  <WholeStateGlyph state={s} />
+                  {WHOLE_STATE_LABELS[s]}
+                </li>
               ))}
             </ul>
           </div>

@@ -5,6 +5,7 @@ import { Pencil, Plus, ScrollText, Search, Trash2 } from 'lucide-react'
 import { useDeleteTemplate, useTemplates } from '@/features/prescriptions/hooks'
 import { PrescriptionTemplateFormDialog } from '@/features/prescriptions/PrescriptionTemplateFormDialog'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import type { PrescriptionTemplate } from '@/shared/types/prescription'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -23,6 +24,14 @@ import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
 
 export function PrescriptionTemplatesPage() {
   const { data: me } = useMe()
+  const [q, setQ] = useState('')
+  const debounced = useDebouncedValue(q, 350)
+  const templates = useTemplates(debounced || undefined)
+  const del = useDeleteTemplate()
+  const confirm = useConfirm()
+  const [editing, setEditing] = useState<PrescriptionTemplate | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+
   const canManage =
     (me?.permissions.includes('prescriptions.create') ||
       me?.permissions.includes('catalogs.manage')) ??
@@ -30,15 +39,15 @@ export function PrescriptionTemplatesPage() {
   // Eliminar plantillas queda reservado al administrador.
   const isAdmin = me?.roles.includes('admin') ?? false
   if (me && !canManage) return <Navigate to="/" replace />
-  const [q, setQ] = useState('')
-  const debounced = useDebouncedValue(q, 350)
-  const templates = useTemplates(debounced || undefined)
-  const del = useDeleteTemplate()
-  const [editing, setEditing] = useState<PrescriptionTemplate | null>(null)
-  const [createOpen, setCreateOpen] = useState(false)
 
-  const onDelete = (t: PrescriptionTemplate) => {
-    if (!window.confirm(`¿Eliminar plantilla "${t.name}"?`)) return
+  const onDelete = async (t: PrescriptionTemplate) => {
+    const ok = await confirm({
+      title: `¿Eliminar plantilla "${t.name}"?`,
+      description: 'Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     del.mutate(t.id, {
       onSuccess: () => toast.success('Plantilla eliminada'),
       onError: () => toast.error('No fue posible eliminar'),

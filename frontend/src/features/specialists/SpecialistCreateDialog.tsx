@@ -4,10 +4,18 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { useCreateSpecialist } from './hooks'
+import { SPECIALTIES } from './specialties'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Textarea } from '@/shared/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -36,7 +44,7 @@ function defaults(): Values {
   return {
     name: '',
     cedula_profesional: '',
-    specialty: '',
+    specialty: 'general',
     default_commission_percent: '',
     bio: '',
   }
@@ -49,11 +57,15 @@ export function SpecialistCreateDialog({ open, onOpenChange }: Props) {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<Values>({
     resolver: zodResolver(schema) as Resolver<Values>,
     defaultValues: defaults(),
   })
+
+  const specialty = watch('specialty')
 
   const onSubmit = (v: Values) => {
     create.mutate(
@@ -122,12 +134,22 @@ export function SpecialistCreateDialog({ open, onOpenChange }: Props) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="specialty">Especialidad</Label>
-              <Input
-                id="specialty"
-                placeholder="Endodoncia, Ortodoncia…"
-                {...register('specialty')}
-              />
+              <Label>Especialidad</Label>
+              <Select
+                value={specialty || 'general'}
+                onValueChange={(v) => setValue('specialty', v)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-64">
+                  {SPECIALTIES.map((s) => (
+                    <SelectItem key={s.key} value={s.key}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="default_commission_percent">Comisión por defecto (%)</Label>

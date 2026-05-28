@@ -5,11 +5,19 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { useCreateTreatment, useUpdateTreatment } from './hooks'
+import { TREATMENT_CATEGORIES } from './categories'
 import type { Treatment } from '@/shared/types/catalog'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Textarea } from '@/shared/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -76,6 +84,8 @@ export function TreatmentFormDialog({ open, onOpenChange, treatment }: Props) {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema) as Resolver<FormValues>,
@@ -85,6 +95,8 @@ export function TreatmentFormDialog({ open, onOpenChange, treatment }: Props) {
   useEffect(() => {
     reset(treatment ? fromTreatment(treatment) : defaults())
   }, [treatment, reset])
+
+  const category = watch('category')
 
   const onSubmit = (v: FormValues) => {
     const payload = {
@@ -136,8 +148,27 @@ export function TreatmentFormDialog({ open, onOpenChange, treatment }: Props) {
               <Input id="code" placeholder="LIMP" {...register('code')} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="category">Categoría</Label>
-              <Input id="category" placeholder="Preventivo" {...register('category')} />
+              <Label>Categoría</Label>
+              <Select
+                value={category || 'none'}
+                onValueChange={(v) => setValue('category', v === 'none' ? '' : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sin categoría" />
+                </SelectTrigger>
+                <SelectContent className="max-h-64">
+                  <SelectItem value="none">Sin categoría</SelectItem>
+                  {/* Conserva un valor de texto libre previo como opción. */}
+                  {category && !TREATMENT_CATEGORIES.includes(category) ? (
+                    <SelectItem value={category}>{category}</SelectItem>
+                  ) : null}
+                  {TREATMENT_CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="sm:col-span-2 space-y-1.5">
               <Label htmlFor="name">Nombre</Label>

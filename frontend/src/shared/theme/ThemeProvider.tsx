@@ -39,6 +39,20 @@ function applyBrandingToDocument(b: Branding) {
     rules.push(`--sidebar-fg: ${sidebarFg};`)
     rules.push(`--sidebar-fg-muted: color-mix(in srgb, ${sidebarFg} 65%, ${sidebarBg});`)
   }
+
+  // Colores finos del menú lateral: solo escribimos los que el tenant haya
+  // definido; el resto cae a los defaults de index.css.
+  const sidebarVars: Array<[string, string | null | undefined]> = [
+    ['--sidebar-item-bg', b.sidebar_item_bg],
+    ['--sidebar-item-fg', b.sidebar_item_color],
+    ['--sidebar-item-hover-bg', b.sidebar_hover_bg],
+    ['--sidebar-active-bg', b.sidebar_active_bg],
+    ['--sidebar-active-fg', b.sidebar_active_color],
+  ]
+  for (const [cssVar, value] of sidebarVars) {
+    const v = value?.trim()
+    if (v) rules.push(`${cssVar}: ${v};`)
+  }
   if (accent) {
     rules.push(`--accent: ${accent};`)
     rules.push(`--accent-foreground: ${accentFg};`)

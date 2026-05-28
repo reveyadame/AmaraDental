@@ -24,12 +24,38 @@ export interface ToothState {
 
 export interface OdontogramResponse {
   data: ToothState[]
-  meta: { patient_id: number; dentition: 'permanent' }
+  meta: {
+    patient_id: number
+    dentition: 'permanent'
+    general_diagnosis: string | null
+  }
 }
 
 export interface UpdateToothStatePayload {
   whole_state?: WholeToothState | null
   faces?: Partial<Record<FaceKey, FaceState>>
+  notes?: string | null
+}
+
+export interface TreatmentLogEntry {
+  id: number
+  patient_id: number
+  tooth_number: number | null
+  treatment_id: number | null
+  treatment_name?: string | null
+  performed_on: string
+  description: string
+  notes: string | null
+  created_by_user_id: number | null
+  created_by_name?: string | null
+  created_at: string | null
+}
+
+export interface CreateTreatmentLogPayload {
+  performed_on: string
+  tooth_number?: number | null
+  treatment_id?: number | null
+  description: string
   notes?: string | null
 }
 

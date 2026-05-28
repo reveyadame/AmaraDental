@@ -2,11 +2,19 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { useUpdateSpecialist } from './hooks'
+import { SPECIALTIES, specialtyLabel } from './specialties'
 import type { Specialist } from '@/shared/types/api'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Textarea } from '@/shared/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -104,13 +112,23 @@ export function SpecialistProfileDialog({ open, onOpenChange, specialist }: Prop
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="specialty">Especialidad</Label>
-              <Input
-                id="specialty"
-                value={specialty}
-                onChange={(e) => setSpecialty(e.target.value)}
-                placeholder="Endodoncia, Ortodoncia…"
-              />
+              <Label>Especialidad</Label>
+              <Select value={specialty || 'general'} onValueChange={setSpecialty}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-64">
+                  {/* Conserva un valor de texto libre previo como opción. */}
+                  {specialty && !SPECIALTIES.some((s) => s.key === specialty) ? (
+                    <SelectItem value={specialty}>{specialtyLabel(specialty)}</SelectItem>
+                  ) : null}
+                  {SPECIALTIES.map((s) => (
+                    <SelectItem key={s.key} value={s.key}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="commission">Comisión por defecto (%)</Label>

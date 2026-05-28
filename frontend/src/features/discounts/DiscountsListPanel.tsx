@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useDeleteDiscount, useDiscounts } from './hooks'
 import { DiscountFormDialog } from './DiscountFormDialog'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
 import { Badge } from '@/shared/ui/badge'
@@ -24,6 +25,7 @@ export function DiscountsListPanel() {
   const isAdmin = me?.roles.includes('admin') ?? false
   const discounts = useDiscounts()
   const remove = useDeleteDiscount()
+  const confirm = useConfirm()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Discount | null>(null)
 
@@ -35,8 +37,14 @@ export function DiscountsListPanel() {
     setEditing(null)
     setOpen(true)
   }
-  const onDelete = (d: Discount) => {
-    if (!window.confirm(`¿Eliminar "${d.name}"?`)) return
+  const onDelete = async (d: Discount) => {
+    const ok = await confirm({
+      title: `¿Eliminar "${d.name}"?`,
+      description: 'Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     remove.mutate(d.id, {
       onSuccess: () => toast.success('Descuento eliminado'),
       onError: () => toast.error('No fue posible eliminar'),

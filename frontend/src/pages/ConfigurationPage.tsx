@@ -51,6 +51,13 @@ const TIMEZONES = [
 
 const inferForeground = inferFg
 
+// Defaults que coinciden con la migración. Los colores primario/secundario son
+// obligatorios en el backend, así que si el campo quedó vacío caemos a estos en
+// lugar de mandar '' (que dispara validation.required y bloquea el guardado).
+const DEFAULT_PRIMARY = 'oklch(0.546 0.215 262.881)'
+const DEFAULT_PRIMARY_FG = 'oklch(0.985 0 0)'
+const DEFAULT_SECONDARY = 'oklch(0.97 0 0)'
+
 function isProbablyHex(v: string): boolean {
   return /^#?[a-f0-9]{6}$/i.test(v.trim())
 }
@@ -106,6 +113,11 @@ export function ConfigurationPage() {
   const [colorPrimaryFg, setColorPrimaryFg] = useState('')
   const [colorSecondary, setColorSecondary] = useState('')
   const [colorSidebar, setColorSidebar] = useState('')
+  const [sidebarItemBg, setSidebarItemBg] = useState('')
+  const [sidebarItemColor, setSidebarItemColor] = useState('')
+  const [sidebarHoverBg, setSidebarHoverBg] = useState('')
+  const [sidebarActiveBg, setSidebarActiveBg] = useState('')
+  const [sidebarActiveColor, setSidebarActiveColor] = useState('')
   const [colorAccent, setColorAccent] = useState('')
   const [razonSocial, setRazonSocial] = useState('')
   const [rfc, setRfc] = useState('')
@@ -138,6 +150,11 @@ export function ConfigurationPage() {
     setColorPrimaryFg(b.color_primary_foreground ?? '')
     setColorSecondary(b.color_secondary ?? '')
     setColorSidebar(b.color_sidebar ?? '')
+    setSidebarItemBg(b.sidebar_item_bg ?? '')
+    setSidebarItemColor(b.sidebar_item_color ?? '')
+    setSidebarHoverBg(b.sidebar_hover_bg ?? '')
+    setSidebarActiveBg(b.sidebar_active_bg ?? '')
+    setSidebarActiveColor(b.sidebar_active_color ?? '')
     setColorAccent(b.color_accent ?? '')
     setRazonSocial(b.razon_social ?? '')
     setRfc(b.rfc ?? '')
@@ -201,10 +218,15 @@ export function ConfigurationPage() {
       {
         brand_name: brandName.trim(),
         logo_url: logoUrl,
-        color_primary: colorPrimary.trim(),
-        color_primary_foreground: colorPrimaryFg.trim(),
-        color_secondary: colorSecondary.trim(),
+        color_primary: colorPrimary.trim() || DEFAULT_PRIMARY,
+        color_primary_foreground: colorPrimaryFg.trim() || DEFAULT_PRIMARY_FG,
+        color_secondary: colorSecondary.trim() || DEFAULT_SECONDARY,
         color_sidebar: colorSidebar.trim() || null,
+        sidebar_item_bg: sidebarItemBg.trim() || null,
+        sidebar_item_color: sidebarItemColor.trim() || null,
+        sidebar_hover_bg: sidebarHoverBg.trim() || null,
+        sidebar_active_bg: sidebarActiveBg.trim() || null,
+        sidebar_active_color: sidebarActiveColor.trim() || null,
         color_header: null,
         color_accent: colorAccent.trim() || null,
         razon_social: razonSocial.trim() || null,
@@ -433,8 +455,8 @@ export function ConfigurationPage() {
                 <LayoutPanelLeft className="size-4" /> Cromo de la app
               </CardTitle>
               <CardDescription>
-                Personaliza el fondo del menú lateral y del encabezado superior. El color del
-                texto se ajusta solo según el contraste.
+                Personaliza el fondo del menú lateral y el color de fondo, texto, hover y
+                estado activo de cada elemento del menú.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -444,12 +466,63 @@ export function ConfigurationPage() {
                 onChange={setColorSidebar}
                 helper="Si lo dejas vacío, se usa el fondo claro por defecto."
               />
+
+              <div className="space-y-3 rounded-lg border p-4">
+                <p className="text-xs font-medium text-foreground">
+                  Elementos del menú
+                </p>
+                <p className="text-[10px] text-muted-foreground -mt-2">
+                  Personaliza cada ítem del menú. Cualquier campo vacío usa el valor
+                  derivado del tema.
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <ColorField
+                    label="Fondo del elemento"
+                    value={sidebarItemBg}
+                    onChange={setSidebarItemBg}
+                    helper="Fondo de cada ítem en reposo. Vacío = transparente."
+                  />
+                  <ColorField
+                    label="Texto del elemento"
+                    value={sidebarItemColor}
+                    onChange={setSidebarItemColor}
+                    helper="Color del texto de los ítems del menú."
+                  />
+                  <ColorField
+                    label="Fondo al pasar el cursor (hover)"
+                    value={sidebarHoverBg}
+                    onChange={setSidebarHoverBg}
+                    helper="Resalte al pasar el mouse sobre un ítem."
+                  />
+                  <div />
+                  <ColorField
+                    label="Fondo del elemento activo"
+                    value={sidebarActiveBg}
+                    onChange={setSidebarActiveBg}
+                    helper="Fondo del ítem de la página actual."
+                  />
+                  <ColorField
+                    label="Texto del elemento activo"
+                    value={sidebarActiveColor}
+                    onChange={setSidebarActiveColor}
+                    helper="Color del texto y la barra del ítem activo."
+                  />
+                </div>
+              </div>
+
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => setColorSidebar('')}
+                  onClick={() => {
+                    setColorSidebar('')
+                    setSidebarItemBg('')
+                    setSidebarItemColor('')
+                    setSidebarHoverBg('')
+                    setSidebarActiveBg('')
+                    setSidebarActiveColor('')
+                  }}
                 >
                   Restablecer a por defecto
                 </Button>
@@ -460,18 +533,58 @@ export function ConfigurationPage() {
                 <div className="h-12 px-4 flex items-center text-sm border-b bg-white text-slate-900">
                   Encabezado
                 </div>
-                <div className="grid grid-cols-[160px_1fr]">
+                <div className="grid grid-cols-[180px_1fr]">
                   <div
-                    className="p-3 space-y-1 text-xs min-h-32"
+                    className="p-3 space-y-1 text-xs min-h-36"
                     style={{
                       background: colorSidebar || '#ffffff',
                       color: colorSidebar ? inferForeground(colorSidebar) : '#0f172a',
                     }}
                   >
-                    <div className="opacity-70 uppercase text-[9px] tracking-wide">Clínica</div>
-                    <div>Inicio</div>
-                    <div>Pacientes</div>
-                    <div>Tratamientos</div>
+                    <div className="opacity-70 uppercase text-[9px] tracking-wide mb-1">
+                      Clínica
+                    </div>
+                    {/* Ítem activo */}
+                    <div
+                      className="rounded-md px-2 py-1.5 font-medium"
+                      style={{
+                        background:
+                          sidebarActiveBg ||
+                          `color-mix(in srgb, ${colorPrimary || '#3b82f6'} 15%, transparent)`,
+                        color: sidebarActiveColor || colorPrimary || '#3b82f6',
+                      }}
+                    >
+                      Inicio
+                    </div>
+                    {/* Ítems en reposo */}
+                    <div
+                      className="rounded-md px-2 py-1.5"
+                      style={{
+                        background: sidebarItemBg || 'transparent',
+                        color:
+                          sidebarItemColor ||
+                          (colorSidebar ? inferForeground(colorSidebar) : '#475569'),
+                      }}
+                    >
+                      Pacientes
+                    </div>
+                    {/* Ítem con hover simulado */}
+                    <div
+                      className="rounded-md px-2 py-1.5"
+                      style={{
+                        background:
+                          sidebarHoverBg ||
+                          `color-mix(in srgb, ${
+                            colorSidebar ? inferForeground(colorSidebar) : '#0f172a'
+                          } 8%, transparent)`,
+                        color:
+                          sidebarItemColor ||
+                          (colorSidebar ? inferForeground(colorSidebar) : '#475569'),
+                      }}
+                    >
+                      Tratamientos{' '}
+                      <span className="opacity-60 text-[9px]">(hover)</span>
+                    </div>
                   </div>
                   <div className="p-4 text-xs text-muted-foreground bg-muted/30">
                     Contenido principal

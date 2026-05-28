@@ -4,6 +4,7 @@ import {
   type FaceKey,
   type ToothState,
 } from '@/shared/types/odontogram'
+import { WholeStateOverlay } from './odontogramSymbols'
 
 interface Props {
   tooth: ToothState
@@ -73,71 +74,20 @@ export function Tooth({ tooth, selected, onSelect }: Props) {
         className="size-10 sm:size-11"
         aria-label={`Diente ${tooth.tooth_number}`}
       >
-        {facePaths.map((f) => (
-          <polygon
-            key={f.key}
-            points={f.points}
-            fill={colorFor(f.key)}
-            stroke="#1f2937"
-            strokeWidth="0.5"
-          />
-        ))}
+        {/* Las caras se atenúan cuando el diente está ausente. */}
+        <g opacity={whole === 'absent' ? 0.4 : 1}>
+          {facePaths.map((f) => (
+            <polygon
+              key={f.key}
+              points={f.points}
+              fill={colorFor(f.key)}
+              stroke="#1f2937"
+              strokeWidth="0.5"
+            />
+          ))}
+        </g>
 
-        {whole === 'absent' || whole === 'extraction_indicated' ? (
-          <>
-            <line x1="6" y1="6" x2="34" y2="34" stroke="#dc2626" strokeWidth="2.5" />
-            <line x1="34" y1="6" x2="6" y2="34" stroke="#dc2626" strokeWidth="2.5" />
-          </>
-        ) : null}
-
-        {whole === 'crown' ? (
-          <circle
-            cx="20"
-            cy="20"
-            r="17"
-            fill="none"
-            stroke="#eab308"
-            strokeWidth="2"
-          />
-        ) : null}
-
-        {whole === 'endodontics' ? (
-          <polygon
-            points="20,8 26,18 14,18"
-            fill="#a855f7"
-            stroke="#581c87"
-            strokeWidth="0.5"
-          />
-        ) : null}
-
-        {whole === 'implant' ? (
-          <>
-            <rect x="17" y="8" width="6" height="6" fill="#475569" />
-            <rect x="18" y="14" width="4" height="18" fill="#94a3b8" />
-          </>
-        ) : null}
-
-        {whole === 'fracture' ? (
-          <polyline
-            points="6,18 16,22 14,28 24,24 22,32"
-            fill="none"
-            stroke="#dc2626"
-            strokeWidth="2"
-          />
-        ) : null}
-
-        {whole === 'prosthesis' ? (
-          <rect
-            x="6"
-            y="6"
-            width="28"
-            height="28"
-            fill="none"
-            stroke="#0891b2"
-            strokeWidth="2"
-            strokeDasharray="3 2"
-          />
-        ) : null}
+        {whole ? <WholeStateOverlay state={whole} /> : null}
       </svg>
     </button>
   )

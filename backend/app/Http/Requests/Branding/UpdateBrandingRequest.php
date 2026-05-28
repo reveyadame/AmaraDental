@@ -28,6 +28,11 @@ class UpdateBrandingRequest extends FormRequest
             'color_primary_foreground' => ['sometimes', 'required', 'string', 'max:64'],
             'color_secondary' => ['sometimes', 'required', 'string', 'max:64'],
             'color_sidebar' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'sidebar_item_bg' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'sidebar_item_color' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'sidebar_hover_bg' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'sidebar_active_bg' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'sidebar_active_color' => ['sometimes', 'nullable', 'string', 'max:64'],
             'color_header' => ['sometimes', 'nullable', 'string', 'max:64'],
             'color_accent' => ['sometimes', 'nullable', 'string', 'max:64'],
 

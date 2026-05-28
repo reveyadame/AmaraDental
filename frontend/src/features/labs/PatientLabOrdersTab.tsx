@@ -105,9 +105,9 @@ export function PatientLabOrdersTab({ patient }: Props) {
                     {o.lab_name}
                     {o.treatment_name ? ` · ${o.treatment_name}` : ''}
                   </p>
-                  {o.dentist_name ? (
+                  {o.specialist_name ? (
                     <p className="text-xs text-muted-foreground">
-                      {o.dentist_name}
+                      {o.specialist_name}
                     </p>
                   ) : null}
                 </div>

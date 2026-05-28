@@ -12,7 +12,7 @@ interface PaginatedMeta {
 export interface LabOrderListQuery {
   status?: string
   patient_id?: number
-  dentist_user_id?: number
+  specialist_id?: number
   q?: string
   overdue?: boolean
   page?: number
@@ -22,7 +22,7 @@ export interface LabOrderListQuery {
 export interface LabOrderPayload {
   patient_id: number
   treatment_id?: number | null
-  dentist_user_id?: number | null
+  specialist_id?: number | null
   lab_name: string
   work_type?: string | null
   specifications?: string | null

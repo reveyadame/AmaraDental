@@ -2,7 +2,9 @@ import { toast } from 'sonner'
 import { Loader2, Printer, ScrollText, Trash2 } from 'lucide-react'
 import { useDeletePrescription, usePrescription } from './hooks'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { ROUTE_LABEL } from '@/shared/types/prescription'
+import { specialtyLabel } from '@/features/specialists/specialties'
 import { Button } from '@/shared/ui/button'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { Separator } from '@/shared/ui/separator'
@@ -37,6 +39,7 @@ export function PrescriptionDetailDialog({
   const { data: me } = useMe()
   const query = usePrescription(prescriptionId ?? undefined)
   const del = useDeletePrescription(patientId)
+  const confirm = useConfirm()
 
   const canDelete = me?.permissions.includes('prescriptions.delete') ?? false
 
@@ -45,10 +48,15 @@ export function PrescriptionDetailDialog({
     window.open(`/recetas/${query.data.id}/imprimir`, '_blank', 'noopener')
   }
 
-  const onDelete = () => {
+  const onDelete = async () => {
     if (!query.data) return
-    if (!window.confirm('¿Eliminar esta receta? Esta acción no se puede deshacer.'))
-      return
+    const ok = await confirm({
+      title: '¿Eliminar esta receta?',
+      description: 'Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     del.mutate(query.data.id, {
       onSuccess: () => {
         toast.success('Receta eliminada')
@@ -91,7 +99,7 @@ export function PrescriptionDetailDialog({
                 </p>
                 <p className="font-medium text-foreground">{query.data.specialist_name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {query.data.specialist_specialty ?? 'Odontología general'}
+                  {specialtyLabel(query.data.specialist_specialty)}
                   {query.data.specialist_cedula
                     ? ` · Céd. ${query.data.specialist_cedula}`
                     : ''}

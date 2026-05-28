@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useDeleteUser, useUsers } from '@/features/users/hooks'
 import { UserFormDialog } from '@/features/users/UserFormDialog'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
 import type { User } from '@/shared/types/api'
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar'
@@ -52,6 +53,7 @@ export function UsersPage() {
   const debouncedQ = useDebouncedValue(q, 350)
   const users = useUsers({ q: debouncedQ, per_page: 50 })
   const remove = useDeleteUser()
+  const confirm = useConfirm()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<User | null>(null)
 
@@ -65,12 +67,18 @@ export function UsersPage() {
     setEditing(u)
     setOpen(true)
   }
-  const onDelete = (u: User) => {
+  const onDelete = async (u: User) => {
     if (u.id === me?.id) {
       toast.error('No puedes eliminar tu propio usuario')
       return
     }
-    if (!window.confirm(`¿Eliminar a "${u.name}"?`)) return
+    const ok = await confirm({
+      title: `¿Eliminar a "${u.name}"?`,
+      description: 'El usuario perderá acceso al sistema. Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     remove.mutate(u.id, {
       onSuccess: () => toast.success('Usuario eliminado'),
       onError: () => toast.error('No fue posible eliminar'),

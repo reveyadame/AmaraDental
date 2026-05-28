@@ -8,6 +8,7 @@ import {
   History,
   Loader2,
   Printer,
+  ReceiptText,
   Sparkles,
   Trash2,
 } from 'lucide-react'
@@ -19,6 +20,7 @@ import {
 } from '@/features/commissions/hooks'
 import { PayCommissionDialog } from '@/features/commissions/PayCommissionDialog'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import type {
   CommissionPayment,
   PendingCommissionGroup,
@@ -27,6 +29,12 @@ import { Avatar, AvatarFallback } from '@/shared/ui/avatar'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shared/ui/dropdown-menu'
 import { Skeleton } from '@/shared/ui/skeleton'
 import {
   Table,
@@ -255,16 +263,18 @@ function PendingGroupCard({ group }: { group: PendingCommissionGroup }) {
 function PaymentRow({ payment }: { payment: CommissionPayment }) {
   const [open, setOpen] = useState(false)
   const remove = useDeleteCommissionPayment()
+  const confirm = useConfirm()
   const { data: me } = useMe()
   const isAdmin = me?.roles.includes('admin') ?? false
 
-  const onDelete = () => {
-    if (
-      !window.confirm(
-        `¿Eliminar este pago de comisión? Los items pagados volverán a aparecer como pendientes.`,
-      )
-    )
-      return
+  const onDelete = async () => {
+    const ok = await confirm({
+      title: '¿Eliminar este pago de comisión?',
+      description: 'Los items pagados volverán a aparecer como pendientes.',
+      confirmText: 'Eliminar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     remove.mutate(payment.id, {
       onSuccess: () => toast.success('Pago eliminado'),
       onError: (err: unknown) => {
@@ -311,21 +321,44 @@ function PaymentRow({ payment }: { payment: CommissionPayment }) {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-end gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() =>
-                window.open(
-                  `/comisiones/pagos/${payment.id}/imprimir`,
-                  '_blank',
-                  'noopener,noreferrer',
-                )
-              }
-              aria-label="Imprimir recibo"
-              title="Imprimir recibo"
-            >
-              <Printer className="size-3.5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label="Imprimir"
+                  title="Imprimir"
+                >
+                  <Printer className="size-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open(
+                      `/comisiones/pagos/${payment.id}/imprimir`,
+                      '_blank',
+                      'noopener,noreferrer',
+                    )
+                  }
+                >
+                  <ReceiptText className="size-4" />
+                  Recibo (hoja carta)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open(
+                      `/comisiones/pagos/${payment.id}/ticket`,
+                      '_blank',
+                      'noopener,noreferrer',
+                    )
+                  }
+                >
+                  <Printer className="size-4" />
+                  Ticket
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {isAdmin ? (
               <Button
                 size="sm"

@@ -11,9 +11,12 @@ import {
 } from 'lucide-react'
 import { usePatient } from './hooks'
 import { PatientFormDialog } from './PatientFormDialog'
+import { COUNTRY_LABELS } from './regions'
+import { MARITAL_STATUS_LABELS } from '@/shared/types/patient'
 import { MedicalHistoryTab } from './MedicalHistoryTab'
 import { ConsentsTab } from './ConsentsTab'
 import { OdontogramTab } from './OdontogramTab'
+import { EndodonticsTab } from './EndodonticsTab'
 import { PrescriptionsTab } from '@/features/prescriptions/PrescriptionsTab'
 import { PatientAccountTab } from '@/features/cash/PatientAccountTab'
 import { PatientMembershipTab } from '@/features/memberships/PatientMembershipTab'
@@ -114,23 +117,27 @@ export function PatientDetailPage() {
           </Card>
 
           <Tabs defaultValue="datos" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="datos">Datos</TabsTrigger>
-              <TabsTrigger value="cuenta">Estado de cuenta</TabsTrigger>
-              <TabsTrigger value="membresia">Membresía</TabsTrigger>
-              {canViewClinical ? (
-                <>
-                  <TabsTrigger value="historia">Historia clínica</TabsTrigger>
-                  <TabsTrigger value="odontograma">Odontograma</TabsTrigger>
-                  <TabsTrigger value="recetas">Recetas</TabsTrigger>
-                </>
-              ) : null}
-              <TabsTrigger value="laboratorios">Laboratorios</TabsTrigger>
-              <TabsTrigger value="recalls">Recalls</TabsTrigger>
-              {canViewClinical ? (
-                <TabsTrigger value="consentimientos">Consentimientos</TabsTrigger>
-              ) : null}
-            </TabsList>
+            {/* Scroll horizontal cuando no caben todos los tabs (móvil). */}
+            <div className="-mx-1 overflow-x-auto pb-1">
+              <TabsList className="w-max">
+                <TabsTrigger value="datos">Datos</TabsTrigger>
+                <TabsTrigger value="cuenta">Estado de cuenta</TabsTrigger>
+                <TabsTrigger value="membresia">Membresía</TabsTrigger>
+                {canViewClinical ? (
+                  <>
+                    <TabsTrigger value="historia">Historia clínica</TabsTrigger>
+                    <TabsTrigger value="odontograma">Odontograma</TabsTrigger>
+                    <TabsTrigger value="endodoncia">Endodoncia</TabsTrigger>
+                    <TabsTrigger value="recetas">Recetas</TabsTrigger>
+                  </>
+                ) : null}
+                <TabsTrigger value="laboratorios">Laboratorios</TabsTrigger>
+                <TabsTrigger value="recalls">Recalls</TabsTrigger>
+                {canViewClinical ? (
+                  <TabsTrigger value="consentimientos">Consentimientos</TabsTrigger>
+                ) : null}
+              </TabsList>
+            </div>
 
             <TabsContent value="datos">
               <div className="grid gap-4 md:grid-cols-2">
@@ -157,15 +164,32 @@ export function PatientDetailPage() {
                       </p>
                     ) : null}
                     <Separator />
-                    {patient.data.address || patient.data.city || patient.data.state ? (
+                    {patient.data.address ||
+                    patient.data.city ||
+                    patient.data.state ||
+                    patient.data.country ? (
                       <p className="flex items-start gap-2 text-muted-foreground">
                         <MapPin className="size-4 mt-0.5" />
                         <span>
-                          {patient.data.address}
-                          {patient.data.address ? <br /> : null}
+                          {patient.data.address ? (
+                            <>
+                              {patient.data.address}
+                              <br />
+                            </>
+                          ) : null}
                           {[patient.data.city, patient.data.state, patient.data.postal_code]
                             .filter(Boolean)
                             .join(', ')}
+                          {patient.data.country ? (
+                            <>
+                              {patient.data.city ||
+                              patient.data.state ||
+                              patient.data.postal_code ? (
+                                <br />
+                              ) : null}
+                              {COUNTRY_LABELS[patient.data.country]}
+                            </>
+                          ) : null}
                         </span>
                       </p>
                     ) : (
@@ -182,6 +206,14 @@ export function PatientDetailPage() {
                     <div>
                       <p className="text-xs text-muted-foreground">Ocupación</p>
                       <p className="text-foreground">{patient.data.occupation ?? '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Estado civil</p>
+                      <p className="text-foreground">
+                        {patient.data.marital_status
+                          ? MARITAL_STATUS_LABELS[patient.data.marital_status]
+                          : '—'}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Referido por</p>
@@ -236,6 +268,10 @@ export function PatientDetailPage() {
 
                 <TabsContent value="odontograma">
                   <OdontogramTab patientId={patient.data.id} />
+                </TabsContent>
+
+                <TabsContent value="endodoncia">
+                  <EndodonticsTab patientId={patient.data.id} />
                 </TabsContent>
 
                 <TabsContent value="recetas">

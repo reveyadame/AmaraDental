@@ -4,6 +4,7 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { PatientsListPage } from '@/features/patients/PatientsListPage'
 import { PatientDetailPage } from '@/features/patients/PatientDetailPage'
 import { PrintOdontogramPage } from '@/features/patients/PrintOdontogramPage'
+import { PrintEndodonticsPage } from '@/features/patients/PrintEndodonticsPage'
 import { PrintConsentPage } from '@/features/patients/PrintConsentPage'
 import { TreatmentsPage } from '@/pages/TreatmentsPage'
 import { SpecialistsPage } from '@/pages/SpecialistsPage'
@@ -20,6 +21,7 @@ import { AgendaPage } from '@/pages/AgendaPage'
 import { NewPrescriptionPage } from '@/features/prescriptions/NewPrescriptionPage'
 import { PrintPrescriptionPage } from '@/features/prescriptions/PrintPrescriptionPage'
 import { PrescriptionTemplatesPage } from '@/pages/PrescriptionTemplatesPage'
+import { ConsentTemplatesPage } from '@/pages/ConsentTemplatesPage'
 import { ConfigurationPage } from '@/pages/ConfigurationPage'
 import { ReportsPage } from '@/pages/ReportsPage'
 import { MembershipsPage } from '@/pages/MembershipsPage'
@@ -29,6 +31,7 @@ import { AuditLogPage } from '@/pages/AuditLogPage'
 import { UsersPage } from '@/pages/UsersPage'
 import { CommissionsPage } from '@/pages/CommissionsPage'
 import { PrintCommissionPaymentPage } from '@/features/commissions/PrintCommissionPaymentPage'
+import { PrintCommissionTicketPage } from '@/features/commissions/PrintCommissionTicketPage'
 import { ProtectedRoute } from './ProtectedRoute'
 import { AppShell } from './AppShell'
 
@@ -57,6 +60,14 @@ export function Router() {
         }
       />
       <Route
+        path="/pacientes/:id/endodoncia/imprimir"
+        element={
+          <ProtectedRoute>
+            <PrintEndodonticsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/recetas/:id/imprimir"
         element={
           <ProtectedRoute>
@@ -76,6 +87,7 @@ export function Router() {
       <Route path="/especialistas" element={<Shell><SpecialistsPage /></Shell>} />
       <Route path="/agenda" element={<Shell><AgendaPage /></Shell>} />
       <Route path="/recetas/plantillas" element={<Shell><PrescriptionTemplatesPage /></Shell>} />
+      <Route path="/consentimientos/plantillas" element={<Shell><ConsentTemplatesPage /></Shell>} />
       <Route path="/configuracion" element={<Shell><ConfigurationPage /></Shell>} />
       <Route path="/reportes" element={<Shell><ReportsPage /></Shell>} />
       <Route path="/membresias" element={<Shell><MembershipsPage /></Shell>} />
@@ -89,6 +101,14 @@ export function Router() {
         element={
           <ProtectedRoute>
             <PrintCommissionPaymentPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/comisiones/pagos/:id/ticket"
+        element={
+          <ProtectedRoute>
+            <PrintCommissionTicketPage />
           </ProtectedRoute>
         }
       />

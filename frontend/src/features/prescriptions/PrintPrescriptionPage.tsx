@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { usePrescription } from './hooks'
+import { specialtyLabel } from '@/features/specialists/specialties'
 import { useBranding } from '@/shared/theme/ThemeProvider'
 import { ROUTE_LABEL } from '@/shared/types/prescription'
 
@@ -179,7 +180,7 @@ export function PrintPrescriptionPage() {
               </p>
               <p className="text-sm font-semibold">{r.specialist_name}</p>
               <p className="text-[11px] text-gray-700">
-                {r.specialist_specialty ?? 'Odontología general'}
+                {specialtyLabel(r.specialist_specialty)}
                 {r.specialist_cedula ? (
                   <>
                     {' '}

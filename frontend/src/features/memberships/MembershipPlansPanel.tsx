@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useDeleteMembershipPlan, useMembershipPlans } from './hooks'
 import { MembershipPlanFormDialog } from './MembershipPlanFormDialog'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
 import { Badge } from '@/shared/ui/badge'
@@ -16,6 +17,7 @@ export function MembershipPlansPanel() {
   const isAdmin = me?.roles.includes('admin') ?? false
   const plans = useMembershipPlans()
   const remove = useDeleteMembershipPlan()
+  const confirm = useConfirm()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<MembershipPlan | null>(null)
 
@@ -27,8 +29,14 @@ export function MembershipPlansPanel() {
     setEditing(p)
     setOpen(true)
   }
-  const onDelete = (p: MembershipPlan) => {
-    if (!window.confirm(`¿Eliminar plan "${p.name}"?`)) return
+  const onDelete = async (p: MembershipPlan) => {
+    const ok = await confirm({
+      title: `¿Eliminar plan "${p.name}"?`,
+      description: 'Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     remove.mutate(p.id, {
       onSuccess: () => toast.success('Plan eliminado'),
       onError: () => toast.error('No fue posible eliminar'),

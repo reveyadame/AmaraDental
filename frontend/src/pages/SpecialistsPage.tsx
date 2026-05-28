@@ -5,7 +5,9 @@ import { useDeleteSpecialist, useSpecialists } from '@/features/specialists/hook
 import { SpecialistProfileDialog } from '@/features/specialists/SpecialistProfileDialog'
 import { SpecialistCreateDialog } from '@/features/specialists/SpecialistCreateDialog'
 import { CommissionsDialog } from '@/features/specialists/CommissionsDialog'
+import { specialtyLabel } from '@/features/specialists/specialties'
 import { useAuth } from '@/shared/auth/permissions'
+import { useConfirm } from '@/shared/ui/confirm'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Card } from '@/shared/ui/card'
@@ -32,14 +34,17 @@ export function SpecialistsPage() {
   const [commissionsFor, setCommissionsFor] = useState<Specialist | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const del = useDeleteSpecialist()
+  const confirm = useConfirm()
 
-  const onDelete = (s: Specialist) => {
-    if (
-      !window.confirm(
-        `¿Marcar "${s.name}" como inactivo? Quedará oculto en los selectores pero se mantiene el historial.`,
-      )
-    )
-      return
+  const onDelete = async (s: Specialist) => {
+    const ok = await confirm({
+      title: `¿Marcar "${s.name}" como inactivo?`,
+      description:
+        'Quedará oculto en los selectores pero se mantiene el historial.',
+      confirmText: 'Desactivar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     del.mutate(s.id, {
       onSuccess: () => toast.success('Especialista desactivado'),
       onError: () => toast.error('No fue posible desactivar'),
@@ -143,7 +148,7 @@ export function SpecialistsPage() {
                     {s.cedula_profesional ?? '—'}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {s.specialty ?? 'Odontología general'}
+                    {specialtyLabel(s.specialty)}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {s.default_commission_percent != null

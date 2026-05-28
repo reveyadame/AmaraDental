@@ -3,8 +3,13 @@ import { Printer } from 'lucide-react'
 import { useOdontogram } from './useOdontogram'
 import { Tooth } from './Tooth'
 import { ToothEditor } from './ToothEditor'
+import { TreatmentLog } from './TreatmentLog'
+import { OdontogramDiagnosis } from './OdontogramDiagnosis'
+import { WholeStateGlyph } from './odontogramSymbols'
 import { useMe } from '@/features/auth/hooks'
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 import { Button } from '@/shared/ui/button'
+import { Sheet, SheetContent, SheetTitle } from '@/shared/ui/sheet'
 import {
   FACE_STATE_COLORS,
   FACE_STATE_LABELS,
@@ -56,6 +61,7 @@ export function OdontogramTab({ patientId }: { patientId: number }) {
   const odontogram = useOdontogram(patientId)
   const { data: me } = useMe()
   const canEdit = me?.permissions.includes('clinical.manage') ?? false
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
   const [selected, setSelected] = useState<number | null>(null)
 
   const indexed = useMemo(() => {
@@ -100,46 +106,91 @@ export function OdontogramTab({ patientId }: { patientId: number }) {
           <Printer className="size-4" /> Imprimir / PDF
         </Button>
       </div>
-      <Card>
-        <CardContent className="p-4 sm:p-6">
-          <div className="space-y-4 overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
-            <div className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">
-              Maxilar superior
-            </div>
-            <ArchRow
-              teeth={upperTeeth}
-              selectedNumber={selected}
-              onSelect={setSelected}
-            />
-            <div className="border-b border-dashed mx-auto max-w-md" />
-            <ArchRow
-              teeth={lowerTeeth}
-              selectedNumber={selected}
-              onSelect={setSelected}
-            />
-            <div className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">
-              Maxilar inferior
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      <Legend />
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-6 space-y-6 lg:space-y-0">
+        {/* Columna principal */}
+        <div className="space-y-6 min-w-0">
+          <Card>
+            <CardContent className="p-4 sm:p-6">
+              <div className="space-y-4 overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
+                <div className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Maxilar superior
+                </div>
+                <ArchRow
+                  teeth={upperTeeth}
+                  selectedNumber={selected}
+                  onSelect={setSelected}
+                />
+                <div className="border-b border-dashed mx-auto max-w-md" />
+                <ArchRow
+                  teeth={lowerTeeth}
+                  selectedNumber={selected}
+                  onSelect={setSelected}
+                />
+                <div className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Maxilar inferior
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-      {selectedTooth ? (
-        <ToothEditor
-          patientId={patientId}
-          tooth={selectedTooth}
-          readOnly={!canEdit}
-          onClose={() => setSelected(null)}
-        />
-      ) : (
-        <Card className="border-dashed">
-          <CardContent className="p-6 text-center text-sm text-muted-foreground">
-            Toca un diente del odontograma para ver o registrar su estado.
-          </CardContent>
-        </Card>
-      )}
+          <Legend />
+
+          <OdontogramDiagnosis
+            patientId={patientId}
+            value={odontogram.data?.meta.general_diagnosis ?? null}
+            canEdit={canEdit}
+          />
+
+          <TreatmentLog patientId={patientId} defaultToothNumber={selected} />
+        </div>
+
+        {/* Editor del diente — panel fijo a la derecha en escritorio */}
+        {isDesktop ? (
+          <aside className="lg:sticky lg:top-6">
+            {selectedTooth ? (
+              <ToothEditor
+                patientId={patientId}
+                tooth={selectedTooth}
+                readOnly={!canEdit}
+                onClose={() => setSelected(null)}
+              />
+            ) : (
+              <Card className="border-dashed">
+                <CardContent className="p-6 text-center text-sm text-muted-foreground">
+                  Toca un diente del odontograma para ver o registrar su estado.
+                </CardContent>
+              </Card>
+            )}
+          </aside>
+        ) : null}
+      </div>
+
+      {/* En móvil, el editor se abre en un panel deslizable para no desplazarse. */}
+      {!isDesktop ? (
+        <Sheet
+          open={!!selectedTooth}
+          onOpenChange={(o) => {
+            if (!o) setSelected(null)
+          }}
+        >
+          <SheetContent
+            side="bottom"
+            className="max-h-[88vh] overflow-y-auto p-0 pt-2"
+          >
+            <SheetTitle className="sr-only">
+              Diente {selected ?? ''}
+            </SheetTitle>
+            {selectedTooth ? (
+              <ToothEditor
+                patientId={patientId}
+                tooth={selectedTooth}
+                readOnly={!canEdit}
+              />
+            ) : null}
+          </SheetContent>
+        </Sheet>
+      ) : null}
     </div>
   )
 }
@@ -168,9 +219,12 @@ function Legend() {
           <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
             Estado global
           </p>
-          <ul className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-xs text-muted-foreground">
+          <ul className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-1.5 text-xs text-foreground">
             {WHOLE_STATES.map((s) => (
-              <li key={s}>{WHOLE_STATE_LABELS[s]}</li>
+              <li key={s} className="flex items-center gap-1.5">
+                <WholeStateGlyph state={s} />
+                {WHOLE_STATE_LABELS[s]}
+              </li>
             ))}
           </ul>
         </div>

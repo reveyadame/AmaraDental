@@ -8,6 +8,7 @@ import {
 } from './hooks'
 import { useSpecialists } from '@/features/specialists/hooks'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import type { AgendaBlock } from '@/shared/types/agenda'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -78,6 +79,7 @@ export function AgendaBlockDialog({
   const del = useDeleteAgendaBlock()
   const specialists = useSpecialists()
   const { data: me } = useMe()
+  const confirm = useConfirm()
   const isAdmin = me?.roles.includes('admin') ?? false
 
   const [title, setTitle] = useState('')
@@ -163,9 +165,15 @@ export function AgendaBlockDialog({
     })
   }
 
-  const onDelete = () => {
+  const onDelete = async () => {
     if (!block) return
-    if (!window.confirm('¿Eliminar este bloqueo?')) return
+    const ok = await confirm({
+      title: '¿Eliminar este bloqueo?',
+      description: 'El horario volverá a quedar disponible en la agenda.',
+      confirmText: 'Eliminar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     del.mutate(block.id, {
       onSuccess: () => {
         toast.success('Bloqueo eliminado')

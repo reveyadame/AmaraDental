@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CalendarDays, ChevronLeft, ChevronRight, Lock, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Lock, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   useAgendaBlocks,
@@ -8,8 +8,7 @@ import {
 } from '@/features/agenda/hooks'
 import { AppointmentDialog } from '@/features/agenda/AppointmentDialog'
 import { AgendaBlockDialog } from '@/features/agenda/AgendaBlockDialog'
-import { AgendaDayView, StatusLegend } from '@/features/agenda/AgendaDayView'
-import { AgendaWeekView } from '@/features/agenda/AgendaWeekView'
+import { AgendaTimeGrid, StatusLegend } from '@/features/agenda/AgendaTimeGrid'
 import { IcsFeedCard } from '@/features/agenda/IcsFeedCard'
 import { useSpecialists } from '@/features/specialists/hooks'
 import { useMe } from '@/features/auth/hooks'
@@ -21,7 +20,6 @@ import type {
 import { APPOINTMENT_STATUS_LABELS } from '@/shared/types/agenda'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
-import { Badge } from '@/shared/ui/badge'
 import { Skeleton } from '@/shared/ui/skeleton'
 import {
   Select,
@@ -33,6 +31,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 import { cn } from '@/shared/lib/utils'
 import { colorForSpecialist } from '@/features/agenda/specialistColors'
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 
 type View = 'day' | 'week'
 
@@ -66,8 +65,14 @@ function addDays(d: Date, n: number): Date {
 export function AgendaPage() {
   const { data: me } = useMe()
   const specialists = useSpecialists()
+  const isDesktop = useMediaQuery('(min-width: 768px)')
 
-  const [view, setView] = useState<View>('day')
+  // Google Calendar abre en semana en escritorio y en día en móvil.
+  const [view, setView] = useState<View>(() =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+      ? 'week'
+      : 'day',
+  )
   const [cursor, setCursor] = useState<Date>(startOfDay(new Date()))
   const [specialistFilter, setSpecialistFilter] = useState<string>('all')
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -79,13 +84,19 @@ export function AgendaPage() {
     initialDate?: Date | null
   }>({ open: false, block: null })
 
-  const range = useMemo(() => {
-    if (view === 'day') {
-      return { from: startOfDay(cursor), to: endOfDay(cursor) }
-    }
+  const days = useMemo(() => {
+    if (view === 'day') return [startOfDay(cursor)]
     const start = startOfWeek(cursor)
-    return { from: start, to: endOfDay(addDays(start, 6)) }
+    return Array.from({ length: 7 }, (_, i) => addDays(start, i))
   }, [view, cursor])
+
+  const range = useMemo(
+    () => ({
+      from: startOfDay(days[0]!),
+      to: endOfDay(days[days.length - 1]!),
+    }),
+    [days],
+  )
 
   const appts = useAppointments({
     date_from: range.from.toISOString(),
@@ -107,8 +118,6 @@ export function AgendaPage() {
   }
 
   const onSelectAppointment = (a: Appointment) => {
-    // Solo selecciona — muestra la card de cambio rápido debajo. Para abrir
-    // el editor completo el usuario pulsa "Editar detalles…".
     setEditingAppt(a)
     setSlotDate(null)
   }
@@ -116,12 +125,6 @@ export function AgendaPage() {
   const onPickSlot = (slot: Date) => {
     setEditingAppt(null)
     setSlotDate(slot)
-    setDialogOpen(true)
-  }
-
-  const onPickDay = (d: Date) => {
-    setEditingAppt(null)
-    setSlotDate(d)
     setDialogOpen(true)
   }
 
@@ -135,18 +138,30 @@ export function AgendaPage() {
 
   const canManageAgenda = me?.permissions.includes('appointments.manage') ?? false
 
+  const title =
+    view === 'day'
+      ? cursor.toLocaleDateString('es-MX', {
+          weekday: isDesktop ? 'long' : undefined,
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      : (() => {
+          const ws = startOfWeek(cursor)
+          const we = addDays(ws, 6)
+          return `${ws.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} – ${we.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}`
+        })()
+
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 space-y-6">
-      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Agenda</h1>
-          <p className="text-sm text-muted-foreground">
-            Citas, confirmaciones y bloqueos por dentista.
-          </p>
-        </div>
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-6 sm:py-8 space-y-4">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          Agenda
+        </h1>
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
+            size="sm"
             onClick={() =>
               setBlockDialog({ open: true, block: null, initialDate: cursor })
             }
@@ -154,6 +169,7 @@ export function AgendaPage() {
             <Lock className="size-4" /> Cerrar agenda
           </Button>
           <Button
+            size="sm"
             onClick={() => {
               setEditingAppt(null)
               setSlotDate(null)
@@ -165,64 +181,64 @@ export function AgendaPage() {
         </div>
       </header>
 
-      <Card className="p-3 sm:p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-              <ChevronLeft className="size-4" />
+      {/* Toolbar estilo Google Calendar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            onClick={() => setCursor(startOfDay(new Date()))}
+          >
+            Hoy
+          </Button>
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 rounded-full"
+              onClick={() => navigate(-1)}
+              aria-label="Anterior"
+            >
+              <ChevronLeft className="size-5" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
-              onClick={() => setCursor(startOfDay(new Date()))}
+              size="icon"
+              className="size-8 rounded-full"
+              onClick={() => navigate(1)}
+              aria-label="Siguiente"
             >
-              Hoy
+              <ChevronRight className="size-5" />
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate(1)}>
-              <ChevronRight className="size-4" />
-            </Button>
-            <div className="ml-2 flex items-center gap-2 text-sm">
-              <CalendarDays className="size-4 text-muted-foreground" />
-              <span className="font-medium text-foreground capitalize">
-                {view === 'day'
-                  ? cursor.toLocaleDateString('es-MX', {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })
-                  : (() => {
-                      const ws = startOfWeek(cursor)
-                      const we = addDays(ws, 6)
-                      return `${ws.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} – ${we.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}`
-                    })()}
-              </span>
-            </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Select value={specialistFilter} onValueChange={setSpecialistFilter}>
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="Especialista" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los dentistas</SelectItem>
-                {specialists.data?.map((s) => (
-                  <SelectItem key={s.id} value={String(s.id)}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Tabs value={view} onValueChange={(v) => setView(v as View)}>
-              <TabsList>
-                <TabsTrigger value="day">Día</TabsTrigger>
-                <TabsTrigger value="week">Semana</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+          <h2 className="text-base sm:text-xl font-normal text-foreground capitalize">
+            {title}
+          </h2>
         </div>
-      </Card>
+
+        <div className="flex items-center gap-2">
+          <Select value={specialistFilter} onValueChange={setSpecialistFilter}>
+            <SelectTrigger size="sm" className="w-40">
+              <SelectValue placeholder="Especialista" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los dentistas</SelectItem>
+              {specialists.data?.map((s) => (
+                <SelectItem key={s.id} value={String(s.id)}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Tabs value={view} onValueChange={(v) => setView(v as View)}>
+            <TabsList>
+              <TabsTrigger value="day">Día</TabsTrigger>
+              <TabsTrigger value="week">Semana</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      </div>
 
       {editingAppt ? (
         <Card className="p-4 space-y-3 border-primary/40">
@@ -271,9 +287,7 @@ export function AgendaPage() {
             variant="link"
             size="sm"
             className="px-0"
-            onClick={() => {
-              setDialogOpen(true)
-            }}
+            onClick={() => setDialogOpen(true)}
           >
             Editar detalles…
           </Button>
@@ -281,54 +295,32 @@ export function AgendaPage() {
       ) : null}
 
       {appts.isPending ? (
-        <Skeleton className="h-96 w-full" />
-      ) : view === 'day' ? (
-        <AgendaDayView
-          date={cursor}
+        <Skeleton className="h-[28rem] w-full" />
+      ) : (
+        <AgendaTimeGrid
+          days={days}
           appointments={appts.data ?? []}
           blocks={blocksQuery.data ?? []}
           colorBySpecialist={specialistFilter === 'all'}
+          selectedId={editingAppt?.id ?? null}
           onSelectAppointment={onSelectAppointment}
           onSelectBlock={(b) => setBlockDialog({ open: true, block: b })}
           onPickSlot={onPickSlot}
         />
-      ) : (
-        <AgendaWeekView
-          date={cursor}
-          appointments={appts.data ?? []}
-          blocks={blocksQuery.data ?? []}
-          colorBySpecialist={specialistFilter === 'all'}
-          onSelectAppointment={onSelectAppointment}
-          onSelectBlock={(b) => setBlockDialog({ open: true, block: b })}
-          onPickDay={onPickDay}
-        />
       )}
 
-      {/* Leyenda de dentistas — solo cuando se muestran todos */}
-      {specialistFilter === 'all' && (specialists.data?.length ?? 0) > 0 ? (
-        <SpecialistsLegend specialists={specialists.data!} />
-      ) : null}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <StatusLegend />
+        {specialistFilter === 'all' && (specialists.data?.length ?? 0) > 0 ? (
+          <SpecialistsLegend specialists={specialists.data!} />
+        ) : null}
+      </div>
 
-      <StatusLegend />
-
-      {canManageAgenda ? (
-        <>
-          <Badge variant="outline" className="ml-1">
-            Sincronización
-          </Badge>
-          <IcsFeedCard />
-        </>
-      ) : null}
+      {canManageAgenda ? <IcsFeedCard /> : null}
 
       <AppointmentDialog
         open={dialogOpen}
-        onOpenChange={(o) => {
-          setDialogOpen(o)
-          // Cerrar el diálogo no debe limpiar la selección — la card de
-          // cambio rápido depende de `editingAppt`. Si el diálogo se abrió
-          // para crear una cita nueva (sin editingAppt), no hay nada que
-          // limpiar.
-        }}
+        onOpenChange={setDialogOpen}
         initialDate={slotDate}
         appointment={editingAppt}
       />
@@ -351,27 +343,22 @@ function SpecialistsLegend({
   specialists: { id: number; name: string }[]
 }) {
   return (
-    <div className="rounded-md border bg-card p-3">
-      <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">
-        Dentistas
-      </p>
-      <div className="flex flex-wrap gap-3">
-        {specialists.map((s) => {
-          const c = colorForSpecialist(s.id)
-          return (
-            <span
-              key={s.id}
-              className={cn(
-                'inline-flex items-center gap-1.5 text-xs font-medium',
-                c.text,
-              )}
-            >
-              <span className={cn('inline-block size-2.5 rounded-full', c.dot)} />
-              {s.name}
-            </span>
-          )
-        })}
-      </div>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      {specialists.map((s) => {
+        const c = colorForSpecialist(s.id)
+        return (
+          <span
+            key={s.id}
+            className={cn(
+              'inline-flex items-center gap-1.5 text-xs font-medium',
+              c.text,
+            )}
+          >
+            <span className={cn('inline-block size-2.5 rounded-full', c.dot)} />
+            {s.name}
+          </span>
+        )
+      })}
     </div>
   )
 }

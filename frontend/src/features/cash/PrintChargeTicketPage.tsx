@@ -20,11 +20,12 @@ function formatDateTime(iso: string | null): string {
   })
 }
 
-function formatTime(iso: string | null): string {
+function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleTimeString('es-MX', {
-    hour: '2-digit',
-    minute: '2-digit',
+  return new Date(iso).toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
   })
 }
 
@@ -205,7 +206,7 @@ export function PrintChargeTicketPage() {
               <tbody>
                 {payments.map((p) => (
                   <tr key={p.id}>
-                    <td className="pr-1">{formatTime(p.paid_at)}</td>
+                    <td className="pr-1 whitespace-nowrap">{formatDate(p.paid_at)}</td>
                     <td className="pr-1">{METHOD_LABEL[p.method]}</td>
                     <td className="text-right tabular-nums">
                       {formatMXN(p.amount)}

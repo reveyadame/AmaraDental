@@ -33,8 +33,8 @@ export interface LabOrder {
   patient_name?: string
   treatment_id: number | null
   treatment_name?: string | null
-  dentist_user_id: number | null
-  dentist_name?: string | null
+  specialist_id: number | null
+  specialist_name?: string | null
   lab_id: number | null
   lab_name: string
   work_type: string | null

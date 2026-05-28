@@ -15,6 +15,7 @@ import { useDeleteRecall, useRecalls, useUpdateRecall } from '@/features/recalls
 import { AppointmentDialog } from '@/features/agenda/AppointmentDialog'
 import { usePatient } from '@/features/patients/hooks'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
 import { Badge } from '@/shared/ui/badge'
@@ -106,6 +107,7 @@ export function RecallsPage() {
   const recalls = useRecalls(TAB_TO_QUERY[tab])
   const update = useUpdateRecall()
   const remove = useDeleteRecall()
+  const confirm = useConfirm()
 
   const [schedule, setSchedule] = useState<ScheduleState | null>(null)
   // Cargar el paciente cuando vamos a agendar, así el dialog tiene el objeto completo.
@@ -146,8 +148,14 @@ export function RecallsPage() {
     )
   }
 
-  const onDismiss = (r: Recall) => {
-    if (!window.confirm(`¿Descartar el recall de ${r.patient_name}?`)) return
+  const onDismiss = async (r: Recall) => {
+    const ok = await confirm({
+      title: `¿Descartar el recall de ${r.patient_name}?`,
+      description: 'Dejará de aparecer en los recordatorios pendientes.',
+      confirmText: 'Descartar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     update.mutate(
       { id: r.id, payload: { status: 'dismissed' } },
       {
@@ -157,9 +165,14 @@ export function RecallsPage() {
     )
   }
 
-  const onDelete = (r: Recall) => {
-    if (!window.confirm('¿Eliminar este recall? Esta acción no se puede deshacer.'))
-      return
+  const onDelete = async (r: Recall) => {
+    const ok = await confirm({
+      title: '¿Eliminar este recall?',
+      description: 'Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     remove.mutate(r.id, {
       onSuccess: () => toast.success('Recall eliminado'),
       onError: () => toast.error('No fue posible eliminar'),

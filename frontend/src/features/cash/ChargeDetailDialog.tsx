@@ -4,6 +4,7 @@ import { Ban, CreditCard, Loader2, Printer, ReceiptText } from 'lucide-react'
 import { useCancelCharge, useCharge } from './hooks'
 import { openChargeTicket } from './openChargeTicket'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { CHARGE_STATUS_BADGE, type PaymentMethod } from '@/shared/types/cash'
 import { Button } from '@/shared/ui/button'
 import { Badge } from '@/shared/ui/badge'
@@ -44,10 +45,17 @@ export function ChargeDetailDialog({ chargeId, onOpenChange }: Props) {
   const canCancel = me?.permissions.includes('charges.cancel') ?? false
   const query = useCharge(chargeId ?? undefined)
   const cancel = useCancelCharge(chargeId ?? 0)
+  const confirm = useConfirm()
 
-  const onCancel = () => {
-    if (!window.confirm('¿Cancelar este cobro? Los pagos registrados quedarán en su sesión.'))
-      return
+  const onCancel = async () => {
+    const ok = await confirm({
+      title: '¿Cancelar este cobro?',
+      description: 'Los pagos registrados quedarán en su sesión.',
+      confirmText: 'Cancelar cobro',
+      cancelText: 'Volver',
+      variant: 'destructive',
+    })
+    if (!ok) return
     cancel.mutate(undefined, {
       onSuccess: () => toast.success('Cobro cancelado'),
       onError: () => toast.error('No fue posible cancelar'),

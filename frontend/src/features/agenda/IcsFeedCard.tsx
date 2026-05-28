@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { Check, Copy, Loader2, RefreshCw } from 'lucide-react'
 import { useIcsFeedToken, useRegenerateIcsFeedToken } from './hooks'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -12,6 +13,7 @@ export function IcsFeedCard() {
   const { data: me } = useMe()
   const token = useIcsFeedToken()
   const regen = useRegenerateIcsFeedToken()
+  const confirm = useConfirm()
   const [copied, setCopied] = useState(false)
 
   // Solo tiene sentido para usuarios que gestionan la agenda.
@@ -101,13 +103,15 @@ export function IcsFeedCard() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  if (
-                    !window.confirm(
-                      '¿Regenerar token? La URL anterior dejará de funcionar y tendrás que volver a suscribirte en Google Calendar.',
-                    )
-                  )
-                    return
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: '¿Regenerar token?',
+                    description:
+                      'La URL anterior dejará de funcionar y tendrás que volver a suscribirte en Google Calendar.',
+                    confirmText: 'Regenerar',
+                    variant: 'destructive',
+                  })
+                  if (!ok) return
                   generate()
                 }}
                 disabled={regen.isPending}

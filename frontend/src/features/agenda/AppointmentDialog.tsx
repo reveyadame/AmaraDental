@@ -10,6 +10,7 @@ import { useSpecialists } from '@/features/specialists/hooks'
 import { useTreatments } from '@/features/treatments/hooks'
 import { PatientPicker } from '@/features/cash/PatientPicker'
 import { useMe } from '@/features/auth/hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import type { Patient } from '@/shared/types/patient'
 import type { Appointment } from '@/shared/types/agenda'
 import { Button } from '@/shared/ui/button'
@@ -69,6 +70,7 @@ export function AppointmentDialog({
   const create = useCreateAppointment()
   const update = useUpdateAppointment(appointment?.id ?? 0)
   const del = useDeleteAppointment()
+  const confirm = useConfirm()
 
   const { data: me } = useMe()
   const isAdmin = me?.roles.includes('admin') ?? false
@@ -172,9 +174,15 @@ export function AppointmentDialog({
     })
   }
 
-  const onDelete = () => {
+  const onDelete = async () => {
     if (!appointment) return
-    if (!window.confirm('¿Eliminar esta cita? Esta acción no se puede deshacer.')) return
+    const ok = await confirm({
+      title: '¿Eliminar esta cita?',
+      description: 'Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      variant: 'destructive',
+    })
+    if (!ok) return
     del.mutate(appointment.id, {
       onSuccess: () => {
         toast.success('Cita eliminada')

@@ -8,6 +8,7 @@ import {
   ChevronDown,
   CreditCard,
   FileBarChart,
+  FileSignature,
   HandCoins,
   History,
   Home,
@@ -94,6 +95,13 @@ const NAV: NavItem[] = [
         icon: ScrollText,
         perms: ['prescriptions.create', 'catalogs.manage'],
       },
+      {
+        to: '/consentimientos/plantillas',
+        label: 'Plantillas consentimiento',
+        icon: FileSignature,
+        // users.manage funciona como proxy admin-only: solo admin lo tiene.
+        perms: ['users.manage'],
+      },
     ],
   },
   {
@@ -118,8 +126,8 @@ const NAV: NavItem[] = [
         to: '/caja/movimientos',
         label: 'Movimientos',
         icon: ArrowLeftRight,
-        // users.manage funciona como proxy admin-only: solo admin lo tiene.
-        perms: ['users.manage'],
+        // Disponible para el rol Caja; eliminar movimientos sigue siendo admin-only.
+        perms: ['cash.operate'],
       },
     ],
   },
@@ -219,8 +227,8 @@ function SidebarLink({
           'group relative flex items-center gap-3 rounded-md transition-colors',
           nested ? 'pl-3 pr-2 py-1.5 text-[13px]' : 'px-3 py-2 text-sm font-medium',
           isActive
-            ? 'bg-primary/15 text-primary font-medium'
-            : 'text-[var(--sidebar-fg-muted)] hover:bg-black/5 hover:text-[var(--sidebar-fg)] dark:hover:bg-white/10',
+            ? 'bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-fg)] font-medium'
+            : 'bg-[var(--sidebar-item-bg)] text-[var(--sidebar-item-fg)] hover:bg-[var(--sidebar-item-hover-bg)] hover:text-[var(--sidebar-item-hover-fg)]',
         )
       }
     >
@@ -228,7 +236,7 @@ function SidebarLink({
         <>
           {isActive && !nested ? (
             <span
-              className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-primary"
+              className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-[var(--sidebar-active-fg)]"
               aria-hidden
             />
           ) : null}
@@ -278,7 +286,7 @@ function SidebarGroup({
           'w-full group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
           anyChildActive
             ? 'text-[var(--sidebar-fg)]'
-            : 'text-[var(--sidebar-fg-muted)] hover:bg-black/5 hover:text-[var(--sidebar-fg)] dark:hover:bg-white/10',
+            : 'text-[var(--sidebar-item-fg)] hover:bg-[var(--sidebar-item-hover-bg)] hover:text-[var(--sidebar-item-hover-fg)]',
         )}
         aria-expanded={open}
       >
