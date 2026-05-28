@@ -10,6 +10,7 @@ use App\Models\Patient;
 use App\Models\ToothState;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 
@@ -61,7 +62,28 @@ class OdontogramController extends Controller implements HasMiddleware
             'meta' => [
                 'patient_id' => $patient->id,
                 'dentition' => 'permanent',
+                'general_diagnosis' => $patient->odontogram_diagnosis,
             ],
+        ]);
+    }
+
+    /**
+     * Diagnóstico general del odontograma (resumen clínico de la dentadura).
+     * Se guarda en el paciente, auditado por su trait Auditable.
+     */
+    public function updateDiagnosis(Request $request, Patient $patient): JsonResponse
+    {
+        $this->authorize('updateClinical', $patient);
+
+        $data = $request->validate([
+            'diagnosis' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $patient->odontogram_diagnosis = $data['diagnosis'] ?: null;
+        $patient->save();
+
+        return response()->json([
+            'data' => ['general_diagnosis' => $patient->odontogram_diagnosis],
         ]);
     }
 

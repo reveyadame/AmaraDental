@@ -21,7 +21,7 @@ class UpdateLabOrderRequest extends FormRequest
         return [
             'patient_id' => ['sometimes', 'required', 'integer', 'exists:patients,id'],
             'treatment_id' => ['nullable', 'integer', 'exists:treatments,id'],
-            'dentist_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'specialist_id' => ['nullable', 'integer', 'exists:specialists,id'],
             'lab_id' => ['nullable', 'integer', 'exists:labs,id'],
             'lab_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'work_type' => ['nullable', 'string', 'max:120'],

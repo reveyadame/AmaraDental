@@ -25,6 +25,7 @@ class Patient extends Model implements Auditable
         'last_name',
         'date_of_birth',
         'gender',
+        'marital_status',
         'curp',
         'rfc',
         'email',
@@ -33,12 +34,14 @@ class Patient extends Model implements Auditable
         'address',
         'city',
         'state',
+        'country',
         'postal_code',
         'emergency_contact_name',
         'emergency_contact_phone',
         'occupation',
         'referred_by',
         'notes',
+        'odontogram_diagnosis',
         'active',
     ];
 

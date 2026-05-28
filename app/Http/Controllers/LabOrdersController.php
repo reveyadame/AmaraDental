@@ -31,13 +31,13 @@ class LabOrdersController extends Controller implements HasMiddleware
         $this->authorize('viewAny', LabOrder::class);
 
         $orders = LabOrder::query()
-            ->with(['patient', 'treatment', 'dentist'])
+            ->with(['patient', 'treatment', 'specialist'])
             ->when($request->filled('status'),
                 fn ($q) => $q->where('status', $request->string('status')))
             ->when($request->filled('patient_id'),
                 fn ($q) => $q->where('patient_id', $request->integer('patient_id')))
-            ->when($request->filled('dentist_user_id'),
-                fn ($q) => $q->where('dentist_user_id', $request->integer('dentist_user_id')))
+            ->when($request->filled('specialist_id'),
+                fn ($q) => $q->where('specialist_id', $request->integer('specialist_id')))
             ->when($request->filled('q'), function ($q) use ($request): void {
                 $term = '%'.$request->string('q').'%';
                 $q->where(function ($q) use ($term): void {
@@ -72,7 +72,7 @@ class LabOrdersController extends Controller implements HasMiddleware
     {
         $data = $this->fillLabName($request->validated());
         $order = LabOrder::query()->create($data);
-        $order->load(['patient', 'treatment', 'dentist', 'lab']);
+        $order->load(['patient', 'treatment', 'specialist', 'lab']);
 
         return response()->json(['data' => LabOrderResource::make($order)], 201);
     }
@@ -80,7 +80,7 @@ class LabOrdersController extends Controller implements HasMiddleware
     public function show(LabOrder $order): JsonResponse
     {
         $this->authorize('view', $order);
-        $order->load(['patient', 'treatment', 'dentist', 'lab']);
+        $order->load(['patient', 'treatment', 'specialist', 'lab']);
 
         return response()->json(['data' => LabOrderResource::make($order)]);
     }
@@ -89,7 +89,7 @@ class LabOrdersController extends Controller implements HasMiddleware
     {
         $data = $this->fillLabName($request->validated());
         $order->update($data);
-        $order->load(['patient', 'treatment', 'dentist', 'lab']);
+        $order->load(['patient', 'treatment', 'specialist', 'lab']);
 
         return response()->json(['data' => LabOrderResource::make($order)]);
     }
@@ -132,7 +132,7 @@ class LabOrdersController extends Controller implements HasMiddleware
         };
 
         $order->update($patch);
-        $order->load(['patient', 'treatment', 'dentist']);
+        $order->load(['patient', 'treatment', 'specialist']);
 
         return response()->json(['data' => LabOrderResource::make($order)]);
     }

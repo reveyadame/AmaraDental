@@ -24,6 +24,10 @@ class StorePatientRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:120'],
             'date_of_birth' => ['required', 'date', 'before:today'],
             'gender' => ['required', Rule::in(['M', 'F', 'Otro'])],
+            'marital_status' => [
+                'nullable',
+                Rule::in(['soltero', 'casado', 'union_libre', 'divorciado', 'viudo', 'separado']),
+            ],
             'curp' => [
                 'nullable', 'string', 'size:18', 'regex:/^[A-Z0-9]{18}$/',
                 Rule::unique('patients', 'curp')->where('tenant_id', TenantContext::tenantId()),
@@ -35,6 +39,7 @@ class StorePatientRequest extends FormRequest
             'address' => ['nullable', 'string', 'max:500'],
             'city' => ['nullable', 'string', 'max:120'],
             'state' => ['nullable', 'string', 'max:120'],
+            'country' => ['nullable', Rule::in(['MX', 'US'])],
             'postal_code' => ['nullable', 'string', 'max:10'],
             'emergency_contact_name' => ['nullable', 'string', 'max:160'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:32'],

@@ -40,7 +40,7 @@ class LabOrder extends Model implements Auditable
         'patient_id',
         'treatment_id',
         'lab_id',
-        'dentist_user_id',
+        'specialist_id',
         'lab_name',
         'work_type',
         'specifications',
@@ -74,9 +74,9 @@ class LabOrder extends Model implements Auditable
         return $this->belongsTo(Treatment::class);
     }
 
-    public function dentist(): BelongsTo
+    public function specialist(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'dentist_user_id');
+        return $this->belongsTo(Specialist::class);
     }
 
     public function lab(): BelongsTo
