@@ -14,6 +14,7 @@ import {
 import { usePatient } from './hooks'
 import { PatientFormDialog } from './PatientFormDialog'
 import { DeletePatientDialog } from './DeletePatientDialog'
+import { PatientNextAppointment } from './PatientNextAppointmentCard'
 import { useAuth } from '@/shared/auth/permissions'
 import { COUNTRY_LABELS } from './regions'
 import { MARITAL_STATUS_LABELS } from '@/shared/types/patient'
@@ -95,7 +96,8 @@ export function PatientDetailPage() {
       ) : (
         <>
           <Card>
-            <CardContent className="p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <CardContent className="p-6 space-y-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 <div className="grid size-16 place-items-center rounded-full bg-primary/10 text-primary text-lg font-semibold">
                   {initials(patient.data)}
@@ -147,6 +149,10 @@ export function PatientDetailPage() {
                   </Button>
                 ) : null}
               </div>
+            </div>
+
+              <Separator />
+              <PatientNextAppointment patientId={patient.data.id} />
             </CardContent>
           </Card>
 
