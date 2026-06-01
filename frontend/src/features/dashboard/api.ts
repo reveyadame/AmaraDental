@@ -38,13 +38,6 @@ export interface DashboardUrgentRecall {
   days_until_due: number | null
 }
 
-export interface DashboardTopPending {
-  patient_id: number
-  patient_name: string | null
-  total_balance: number
-  charges_count: number
-}
-
 export interface DashboardCashSession {
   id: number
   opened_at: string | null
@@ -52,20 +45,14 @@ export interface DashboardCashSession {
   payments_total: number
   expenses_total: number
   payments_by_method: Record<string, number>
+  expenses_by_method: Record<string, number>
 }
 
 export interface DashboardSummary {
   kpis: DashboardKpis
   revenue_series: DashboardRevenuePoint[]
-  payments_by_method_today: {
-    cash: number
-    card: number
-    card_credit: number
-    transfer: number
-  }
   upcoming_appointments: DashboardUpcomingAppointment[]
   urgent_recalls: DashboardUrgentRecall[]
-  top_pending_balances: DashboardTopPending[]
   cash_session: DashboardCashSession | null
 }
 

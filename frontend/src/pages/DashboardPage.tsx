@@ -8,7 +8,6 @@ import {
   HandCoins,
   Lock,
   Microscope,
-  Phone,
   Plus,
   ReceiptText,
   Sparkles,
@@ -489,7 +488,7 @@ export function DashboardPage() {
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-foreground">
-                Caja de hoy
+                Caja abierta
               </h2>
               <Link
                 to="/caja"
@@ -511,7 +510,7 @@ export function DashboardPage() {
                 </div>
                 <div className="space-y-2 rounded-md bg-muted/40 p-3">
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    Cobros del turno
+                    Total cobrado
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                     <div>
@@ -565,11 +564,12 @@ export function DashboardPage() {
                   </div>
                 ) : null}
                 <div className="flex items-center justify-between font-semibold border-t pt-2">
-                  <span>Neto</span>
+                  <span>Efectivo esperado en caja</span>
                   <span className="tabular-nums">
                     {formatMXN(
-                      d.cash_session.payments_total -
-                        d.cash_session.expenses_total,
+                      d.cash_session.opening_amount +
+                        (d.cash_session.payments_by_method?.cash ?? 0) -
+                        (d.cash_session.expenses_by_method?.cash ?? 0),
                     )}
                   </span>
                 </div>
@@ -773,161 +773,6 @@ export function DashboardPage() {
       </div>
       ) : null}
 
-      {/* Saldos pendientes (caja/reportes) + Labs vencidos (labs) */}
-      {(canOperate || canViewReports || me?.permissions.includes('labs.manage')) && d ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {canOperate ? (
-            <Card>
-              <CardContent className="p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-sm font-semibold text-foreground">
-                      Top pacientes con saldo
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      Los 5 con mayor saldo por cobrar
-                    </p>
-                  </div>
-                  <Link
-                    to="/caja/saldos"
-                    className="text-xs text-primary hover:underline"
-                  >
-                    Ver saldos
-                  </Link>
-                </div>
-                {d.top_pending_balances.length === 0 ? (
-                  <div className="text-center py-6">
-                    <div className="mx-auto grid size-10 place-items-center rounded-full bg-muted mb-2">
-                      <HandCoins className="size-5 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Sin saldos pendientes. ¡Caja al día!
-                    </p>
-                  </div>
-                ) : (
-                  <ul className="divide-y">
-                    {d.top_pending_balances.map((p) => (
-                      <li
-                        key={p.patient_id}
-                        className="py-2.5 flex items-center gap-3"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            <Link
-                              to={`/pacientes/${p.patient_id}`}
-                              className="hover:underline"
-                            >
-                              {p.patient_name ?? '—'}
-                            </Link>
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {p.charges_count}{' '}
-                            {p.charges_count === 1 ? 'cobro' : 'cobros'}
-                          </p>
-                        </div>
-                        <span className="text-sm font-semibold tabular-nums text-rose-600">
-                          {formatMXN(p.total_balance)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <Card>
-            <CardContent className="p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-semibold text-foreground">
-                    Resumen general
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    Estado de la clínica
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-md border p-3">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    Pacientes activos
-                  </p>
-                  <p className="text-xl font-semibold tabular-nums">
-                    {d.kpis.patients_total}
-                  </p>
-                  <Link
-                    to="/pacientes"
-                    className="text-[11px] text-primary hover:underline"
-                  >
-                    Ver pacientes →
-                  </Link>
-                </div>
-                {showRevenueChart ? (
-                  <div className="rounded-md border p-3">
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      Pagos del día — efectivo
-                    </p>
-                    <p className="text-xl font-semibold tabular-nums">
-                      {formatMXN(d.payments_by_method_today.cash)}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Déb {formatMXN(d.payments_by_method_today.card)} ·
-                      Créd {formatMXN(d.payments_by_method_today.card_credit)} ·
-                      Transf {formatMXN(d.payments_by_method_today.transfer)}
-                    </p>
-                  </div>
-                ) : null}
-                <div className="rounded-md border p-3">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    Labs atrasados
-                  </p>
-                  <p
-                    className={cn(
-                      'text-xl font-semibold tabular-nums',
-                      d.kpis.lab_orders_overdue_count > 0
-                        ? 'text-rose-600'
-                        : '',
-                    )}
-                  >
-                    {d.kpis.lab_orders_overdue_count}
-                  </p>
-                  <Link
-                    to="/laboratorios"
-                    className="text-[11px] text-primary hover:underline"
-                  >
-                    Ver órdenes →
-                  </Link>
-                </div>
-                <div className="rounded-md border p-3">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    Recalls esta semana
-                  </p>
-                  <p className="text-xl font-semibold tabular-nums">
-                    {d.kpis.recalls_this_week_count}
-                  </p>
-                  <Link
-                    to="/recalls"
-                    className="text-[11px] text-primary hover:underline"
-                  >
-                    Ver cola →
-                  </Link>
-                </div>
-              </div>
-              {isAdmin ? (
-                <div className="pt-2 border-t">
-                  <Link
-                    to="/reportes"
-                    className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-                  >
-                    <Phone className="size-3" /> Más detalle en Reportes
-                  </Link>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
     </div>
   )
 }

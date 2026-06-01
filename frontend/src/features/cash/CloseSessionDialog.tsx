@@ -191,7 +191,7 @@ export function CloseSessionDialog({ open, onOpenChange, session }: Props) {
             </div>
             <Separator className="my-2" />
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">
-              Cobros del turno
+              Cobros del corte
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
               <div>
@@ -218,7 +218,7 @@ export function CloseSessionDialog({ open, onOpenChange, session }: Props) {
               <>
                 <Separator className="my-2" />
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">
-                  Egresos del turno
+                  Egresos del corte
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                   <div>
@@ -294,7 +294,7 @@ export function CloseSessionDialog({ open, onOpenChange, session }: Props) {
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Justificación de diferencias, observaciones del turno…"
+              placeholder="Justificación de diferencias, observaciones del corte…"
             />
           </div>
 

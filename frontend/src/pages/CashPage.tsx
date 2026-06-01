@@ -54,12 +54,10 @@ const METHOD_LABEL: Record<string, string> = {
   credit: 'Saldo a favor',
 }
 
-function formatTime(iso: string | null): string {
+// La caja puede durar abierta varios días → mostramos la fecha del movimiento.
+function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleTimeString('es-MX', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return new Date(iso).toLocaleDateString('es-MX', { dateStyle: 'medium' })
 }
 
 export function CashPage() {
@@ -98,7 +96,7 @@ export function CashPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Caja</h1>
           <p className="text-sm text-muted-foreground">
-            Cobros, parcialidades y corte por turno.
+            Cobros, parcialidades y corte de caja.
           </p>
         </div>
         {session.data && canOperate ? (
@@ -128,8 +126,8 @@ export function CashPage() {
             </h2>
             <p className="text-xs text-muted-foreground">
               {session.data
-                ? 'Pagos y egresos desde la apertura del turno'
-                : 'Abre tu caja para ver el movimiento del turno'}
+                ? 'Pagos y egresos desde la apertura de la caja'
+                : 'Abre tu caja para ver los movimientos'}
             </p>
           </div>
           {session.data && sums ? (
@@ -174,7 +172,7 @@ export function CashPage() {
           <Table className="min-w-[820px]">
             <TableHeader>
               <TableRow>
-                <TableHead className="whitespace-nowrap">Hora</TableHead>
+                <TableHead className="whitespace-nowrap">Fecha</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Detalle</TableHead>
                 <TableHead>Método</TableHead>
@@ -211,7 +209,7 @@ export function CashPage() {
                       <ReceiptText className="size-6 text-muted-foreground" />
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Aún no hay movimientos en este turno.
+                      Aún no hay movimientos en esta caja.
                     </p>
                   </TableCell>
                 </TableRow>
@@ -229,7 +227,7 @@ export function CashPage() {
                       }}
                     >
                       <TableCell className="text-xs whitespace-nowrap font-mono">
-                        {formatTime(m.occurred_at)}
+                        {formatDate(m.occurred_at)}
                       </TableCell>
                       <TableCell>
                         <span

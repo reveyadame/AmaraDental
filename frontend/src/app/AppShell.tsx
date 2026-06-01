@@ -109,7 +109,7 @@ const NAV: NavItem[] = [
     label: 'Caja',
     icon: CreditCard,
     children: [
-      { to: '/caja', label: 'Resumen del día', icon: LayoutDashboard, perms: ['cash.operate'] },
+      { to: '/caja', label: 'Resumen', icon: LayoutDashboard, perms: ['cash.operate'] },
       { to: '/caja/nuevo', label: 'Nuevo cobro', icon: Plus, perms: ['charges.create'] },
       {
         to: '/caja/saldos',

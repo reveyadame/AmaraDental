@@ -106,7 +106,7 @@ export function NewCashExpenseDialog({ open, onOpenChange }: Props) {
             <TrendingDown className="size-5 text-destructive" /> Registrar egreso
           </DialogTitle>
           <DialogDescription>
-            Salida de caja durante tu turno (pago a lab, insumos, devolución, etc.).
+            Salida de caja mientras está abierta (pago a lab, insumos, devolución, etc.).
           </DialogDescription>
         </DialogHeader>
 

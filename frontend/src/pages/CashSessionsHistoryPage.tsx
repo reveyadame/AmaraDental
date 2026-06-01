@@ -83,7 +83,7 @@ export function CashSessionsHistoryPage() {
       </Card>
 
       <Card>
-        <Table className="min-w-[900px]">
+        <Table className="min-w-[1000px]">
           <TableHeader>
             <TableRow>
               <TableHead>#</TableHead>
@@ -94,7 +94,8 @@ export function CashSessionsHistoryPage() {
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Cobros</TableHead>
               <TableHead className="text-right">Dif. efectivo</TableHead>
-              <TableHead className="text-right">Dif. tarjeta</TableHead>
+              <TableHead className="text-right">Dif. tarj. déb.</TableHead>
+              <TableHead className="text-right">Dif. tarj. créd.</TableHead>
               <TableHead className="text-right">Dif. transf.</TableHead>
             </TableRow>
           </TableHeader>
@@ -102,14 +103,14 @@ export function CashSessionsHistoryPage() {
             {sessions.isPending ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell colSpan={10}>
+                  <TableCell colSpan={11}>
                     <Skeleton className="h-6 w-full" />
                   </TableCell>
                 </TableRow>
               ))
             ) : (sessions.data?.data.length ?? 0) === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="py-14 text-center">
+                <TableCell colSpan={11} className="py-14 text-center">
                   <div className="mx-auto grid size-12 place-items-center rounded-full bg-muted mb-2">
                     <LockKeyhole className="size-6 text-muted-foreground" />
                   </div>
@@ -157,6 +158,9 @@ export function CashSessionsHistoryPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       {diffCell(s.card_difference)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {diffCell(s.card_credit_difference)}
                     </TableCell>
                     <TableCell className="text-right">
                       {diffCell(s.transfer_difference)}

@@ -22,12 +22,10 @@ const METHOD_LABEL: Record<PaymentMethod, string> = {
   credit: 'Saldo a favor',
 }
 
-function formatTime(iso: string | null): string {
+// La caja puede durar abierta varios días → mostramos la fecha del egreso.
+function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleTimeString('es-MX', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return new Date(iso).toLocaleDateString('es-MX', { dateStyle: 'medium' })
 }
 
 export function CashExpensesSection() {
@@ -59,7 +57,7 @@ export function CashExpensesSection() {
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">
-              Egresos del turno
+              Egresos de la caja
             </p>
             <p className="text-xs text-muted-foreground tabular-nums">
               {expenses.length} {expenses.length === 1 ? 'movimiento' : 'movimientos'}
@@ -79,7 +77,7 @@ export function CashExpensesSection() {
 
       {expenses.length === 0 ? (
         <p className="text-xs text-muted-foreground italic">
-          No hay egresos registrados en este turno.
+          No hay egresos registrados en esta caja.
         </p>
       ) : (
         <div className="rounded-md border divide-y">
@@ -102,7 +100,7 @@ export function CashExpensesSection() {
                 {METHOD_LABEL[e.method] ?? e.method}
                 <span className="text-muted-foreground/70">
                   {' · '}
-                  {formatTime(e.paid_at)}
+                  {formatDate(e.paid_at)}
                 </span>
               </div>
               <div className="sm:col-span-3 text-right tabular-nums font-medium text-destructive">

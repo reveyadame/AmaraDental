@@ -19,6 +19,18 @@ function formatDateTime(iso: string | null): string {
   })
 }
 
+// La caja es global y puede durar abierta varios días (clínicas con corte
+// semanal). Mostramos hace cuánto se abrió para que el corte no se asuma diario.
+function formatOpenDuration(iso: string | null): string | null {
+  if (!iso) return null
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  if (mins < 60) return 'hace menos de 1 h'
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `hace ${hours} h`
+  const days = Math.floor(hours / 24)
+  return `hace ${days} ${days === 1 ? 'día' : 'días'}`
+}
+
 export function CashSessionCard() {
   const { data: me } = useMe()
   const canOperate = me?.permissions.includes('cash.operate') ?? false
@@ -65,12 +77,21 @@ export function CashSessionCard() {
   }
 
   const s = session.data
+  // Ingresos: dinero realmente recibido en pagos (efectivo + tarjetas +
+  // transferencia). NO incluye saldo a favor usado ni resta egresos.
   const totalCobrado = s.payments_summary?.total ?? 0
   const cashTotal = s.payments_summary?.by_method?.cash ?? 0
   const cardTotal = s.payments_summary?.by_method?.card ?? 0
   const cardCreditTotal = s.payments_summary?.by_method?.card_credit ?? 0
   const transferTotal = s.payments_summary?.by_method?.transfer ?? 0
+  const creditTotal = s.payments_summary?.by_method?.credit ?? 0
   const count = s.payments_summary?.count ?? 0
+
+  // Egresos del periodo y efectivo físico esperado en el cajón.
+  const egresos = s.expenses_summary?.total ?? 0
+  const cashExpenses = s.expenses_summary?.by_method?.cash ?? 0
+  const efectivoEnCaja = s.opening_amount + cashTotal - cashExpenses
+  const openDuration = formatOpenDuration(s.opened_at)
 
   return (
     <>
@@ -82,10 +103,11 @@ export function CashSessionCard() {
                 <Wallet className="size-5" />
               </div>
               <div>
-                <p className="font-semibold text-foreground">Caja del día abierta</p>
+                <p className="font-semibold text-foreground">Caja abierta</p>
                 <p className="text-xs text-muted-foreground">
                   Abierta por {s.opened_by_name ?? s.user_name ?? '—'} ·{' '}
                   {formatDateTime(s.opened_at)}
+                  {openDuration ? ` · ${openDuration}` : ''}
                 </p>
               </div>
             </div>
@@ -103,7 +125,8 @@ export function CashSessionCard() {
 
           <Separator />
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {/* Nivel 1 — las cifras que importan de un vistazo. */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <p className="text-xs text-muted-foreground">Apertura</p>
               <p className="tabular-nums text-foreground font-medium">
@@ -111,35 +134,74 @@ export function CashSessionCard() {
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Cobrado ({count})</p>
+              <p className="text-xs text-muted-foreground">
+                Total cobrado ({count})
+              </p>
               <p className="tabular-nums text-foreground font-medium">
                 {formatMXN(totalCobrado)}
               </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Efectivo</p>
-              <p className="tabular-nums text-foreground font-medium">
-                {formatMXN(cashTotal)}
+              <p className="text-[10px] text-muted-foreground/80 leading-tight">
+                dinero recibido en pagos
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Tarj. débito</p>
-              <p className="tabular-nums text-foreground font-medium">
-                {formatMXN(cardTotal)}
+              <p className="text-xs text-muted-foreground">Egresos</p>
+              <p className="tabular-nums text-rose-700 dark:text-rose-400 font-medium">
+                {egresos > 0 ? `−${formatMXN(egresos)}` : formatMXN(0)}
               </p>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Tarj. crédito</p>
-              <p className="tabular-nums text-foreground font-medium">
-                {formatMXN(cardCreditTotal)}
+            <div className="rounded-lg bg-primary/5 border border-primary/15 -m-1 p-3">
+              <p className="text-xs text-muted-foreground">
+                Efectivo esperado en caja
+              </p>
+              <p className="tabular-nums text-foreground font-semibold text-lg leading-tight">
+                {formatMXN(efectivoEnCaja)}
+              </p>
+              <p className="text-[10px] text-muted-foreground/80 leading-tight">
+                apertura + efectivo − egresos en efectivo
               </p>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Transferencia</p>
-              <p className="tabular-nums text-foreground font-medium">
-                {formatMXN(transferTotal)}
-              </p>
+          </div>
+
+          <Separator />
+
+          {/* Nivel 2 — desglose por método de pago (secundario). */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              Desglose por método de pago
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Efectivo</p>
+                <p className="tabular-nums text-foreground font-medium">
+                  {formatMXN(cashTotal)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Tarj. débito</p>
+                <p className="tabular-nums text-foreground font-medium">
+                  {formatMXN(cardTotal)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Tarj. crédito</p>
+                <p className="tabular-nums text-foreground font-medium">
+                  {formatMXN(cardCreditTotal)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Transferencia</p>
+                <p className="tabular-nums text-foreground font-medium">
+                  {formatMXN(transferTotal)}
+                </p>
+              </div>
             </div>
+            {creditTotal > 0 ? (
+              <p className="text-[11px] text-muted-foreground">
+                Saldo a favor usado: {formatMXN(creditTotal)} · no es ingreso de
+                caja, no suma al total cobrado.
+              </p>
+            ) : null}
           </div>
         </CardContent>
       </Card>

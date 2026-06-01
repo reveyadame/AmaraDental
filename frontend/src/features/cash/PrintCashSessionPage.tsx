@@ -15,6 +15,13 @@ function formatDateTime(iso: string | null): string {
   return new Date(iso).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
+// La caja puede durar abierta varios días → en los movimientos del corte
+// mostramos la fecha del registro.
+function formatDate(iso: string | null): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('es-MX', { dateStyle: 'medium' })
+}
+
 const METHOD_LABEL: Record<PaymentMethod, string> = {
   cash: 'Efectivo',
   card: 'Tarjeta de débito',
@@ -52,10 +59,20 @@ export function PrintCashSessionPage() {
 
   const s = session.data!
   const totalCobrado = s.payments_summary?.total ?? 0
-  const cashCollected = s.payments_summary?.by_method?.cash ?? 0
-  const cardCollected = s.payments_summary?.by_method?.card ?? s.card_expected ?? 0
-  const transferCollected =
-    s.payments_summary?.by_method?.transfer ?? s.transfer_expected ?? 0
+  // En cortes abiertos los `*_expected` aún son null: los derivamos del
+  // resumen (cobros − egresos por método), misma fórmula que el cierre.
+  const byPay = s.payments_summary?.by_method ?? {}
+  const byExp = s.expenses_summary?.by_method ?? {}
+  const num = (rec: Record<string, number>, k: string): number => rec[k] ?? 0
+  const expectedCash =
+    s.expected_cash ?? s.opening_amount + num(byPay, 'cash') - num(byExp, 'cash')
+  const expectedCard =
+    s.card_expected ?? num(byPay, 'card') - num(byExp, 'card')
+  const expectedCardCredit =
+    s.card_credit_expected ??
+    num(byPay, 'card_credit') - num(byExp, 'card_credit')
+  const expectedTransfer =
+    s.transfer_expected ?? num(byPay, 'transfer') - num(byExp, 'transfer')
   const now = new Date().toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' })
 
   return (
@@ -130,19 +147,25 @@ export function PrintCashSessionPage() {
             <tbody>
               <MethodRow
                 label="Efectivo"
-                expected={s.expected_cash ?? s.opening_amount + cashCollected}
+                expected={expectedCash}
                 counted={s.closing_amount}
                 difference={s.difference}
               />
               <MethodRow
-                label="Tarjeta"
-                expected={s.card_expected ?? cardCollected}
+                label="Tarjeta de débito"
+                expected={expectedCard}
                 counted={s.card_counted}
                 difference={s.card_difference}
               />
               <MethodRow
+                label="Tarjeta de crédito"
+                expected={expectedCardCredit}
+                counted={s.card_credit_counted}
+                difference={s.card_credit_difference}
+              />
+              <MethodRow
                 label="Transferencia"
-                expected={s.transfer_expected ?? transferCollected}
+                expected={expectedTransfer}
                 counted={s.transfer_counted}
                 difference={s.transfer_difference}
               />
@@ -161,13 +184,13 @@ export function PrintCashSessionPage() {
 
         <section>
           <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-2">
-            Pagos del turno{s.payments ? ` (${s.payments.length})` : ''}
+            Pagos del corte{s.payments ? ` (${s.payments.length})` : ''}
           </p>
           {s.payments && s.payments.length > 0 ? (
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-1 px-2">Hora</th>
+                  <th className="text-left py-1 px-2">Fecha</th>
                   <th className="text-left py-1 px-2">Método</th>
                   <th className="text-right py-1 px-2">Monto</th>
                   <th className="text-left py-1 px-2">Referencia</th>
@@ -176,13 +199,8 @@ export function PrintCashSessionPage() {
               <tbody>
                 {s.payments.map((p) => (
                   <tr key={p.id} className="border-b">
-                    <td className="py-1 px-2">
-                      {p.paid_at
-                        ? new Date(p.paid_at).toLocaleTimeString('es-MX', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        : '—'}
+                    <td className="py-1 px-2 whitespace-nowrap">
+                      {formatDate(p.paid_at)}
                     </td>
                     <td className="py-1 px-2">{METHOD_LABEL[p.method]}</td>
                     <td className="py-1 px-2 text-right tabular-nums">
@@ -201,13 +219,13 @@ export function PrintCashSessionPage() {
         {s.expenses && s.expenses.length > 0 ? (
           <section>
             <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-2">
-              Egresos del turno ({s.expenses.length}) — total −
+              Egresos del corte ({s.expenses.length}) — total −
               {formatMXN(s.expenses_summary?.total ?? 0)}
             </p>
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-1 px-2">Hora</th>
+                  <th className="text-left py-1 px-2">Fecha</th>
                   <th className="text-left py-1 px-2">Categoría</th>
                   <th className="text-left py-1 px-2">Descripción</th>
                   <th className="text-left py-1 px-2">Método</th>
@@ -217,13 +235,8 @@ export function PrintCashSessionPage() {
               <tbody>
                 {s.expenses.map((e) => (
                   <tr key={e.id} className="border-b">
-                    <td className="py-1 px-2">
-                      {e.paid_at
-                        ? new Date(e.paid_at).toLocaleTimeString('es-MX', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        : '—'}
+                    <td className="py-1 px-2 whitespace-nowrap">
+                      {formatDate(e.paid_at)}
                     </td>
                     <td className="py-1 px-2">
                       {EXPENSE_CATEGORY_LABELS[

@@ -16,7 +16,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Endpoint agregado para el Dashboard. Devuelve KPIs, series y listas en una
@@ -38,12 +37,19 @@ class DashboardController extends Controller implements HasMiddleware
         $yesterdayStart = $today->subDay()->startOfDay();
         $yesterdayEnd = $today->subDay()->endOfDay();
 
+        // Ingreso real = dinero que efectivamente entró. Excluye `credit`
+        // (saldo a favor usado), que ya fue dinero real cuando se depositó;
+        // contarlo de nuevo lo duplicaría. Mismo criterio que CashSessionResource.
+        $cashFlowMethods = ['cash', 'card', 'card_credit', 'transfer'];
+
         // -------------- KPIs --------------
         $revenueToday = (float) ChargePayment::query()
+            ->whereIn('method', $cashFlowMethods)
             ->whereBetween('paid_at', [$startOfDay, $endOfDay])
             ->sum('amount');
 
         $revenueYesterday = (float) ChargePayment::query()
+            ->whereIn('method', $cashFlowMethods)
             ->whereBetween('paid_at', [$yesterdayStart, $yesterdayEnd])
             ->sum('amount');
 
@@ -84,6 +90,7 @@ class DashboardController extends Controller implements HasMiddleware
         // -------------- Serie de ingresos (últimos 14 días) --------------
         $seriesStart = $today->subDays(13)->startOfDay();
         $rawSeries = ChargePayment::query()
+            ->whereIn('method', $cashFlowMethods)
             ->selectRaw('DATE(paid_at) as day, SUM(amount) as total')
             ->where('paid_at', '>=', $seriesStart)
             ->groupBy('day')
@@ -97,13 +104,6 @@ class DashboardController extends Controller implements HasMiddleware
                 'total' => (float) ($rawSeries[$d] ?? 0),
             ];
         }
-
-        // -------------- Pagos del día por método --------------
-        $paymentsByMethodToday = ChargePayment::query()
-            ->selectRaw('method, SUM(amount) as total')
-            ->whereBetween('paid_at', [$startOfDay, $endOfDay])
-            ->groupBy('method')
-            ->pluck('total', 'method');
 
         // -------------- Próximas citas de hoy --------------
         $upcomingAppointments = Appointment::query()
@@ -145,27 +145,6 @@ class DashboardController extends Controller implements HasMiddleware
                     : null,
             ]);
 
-        // -------------- Pacientes con saldo pendiente (top 5) --------------
-        $topPending = Charge::query()
-            ->select(
-                'patient_id',
-                DB::raw('SUM(balance) as total_balance'),
-                DB::raw('COUNT(*) as charges_count'),
-            )
-            ->where('balance', '>', 0)
-            ->whereIn('status', ['pending', 'partial'])
-            ->groupBy('patient_id')
-            ->orderByDesc('total_balance')
-            ->limit(5)
-            ->with('patient')
-            ->get()
-            ->map(fn ($row) => [
-                'patient_id' => (int) $row->patient_id,
-                'patient_name' => $row->patient?->full_name,
-                'total_balance' => (float) $row->total_balance,
-                'charges_count' => (int) $row->charges_count,
-            ]);
-
         // -------------- Caja global abierta --------------
         $session = CashSession::query()
             ->with(['payments', 'expenses'])
@@ -174,7 +153,10 @@ class DashboardController extends Controller implements HasMiddleware
 
         $cashSession = null;
         if ($session) {
-            $paymentsTotal = (float) $session->payments->sum('amount');
+            // Total cobrado = ingreso real (sin saldo a favor), igual que la caja.
+            $paymentsTotal = (float) $session->payments
+                ->whereIn('method', $cashFlowMethods)
+                ->sum('amount');
             $expensesTotal = (float) $session->expenses->sum('amount');
             $cashSession = [
                 'id' => $session->id,
@@ -183,6 +165,9 @@ class DashboardController extends Controller implements HasMiddleware
                 'payments_total' => round($paymentsTotal, 2),
                 'expenses_total' => round($expensesTotal, 2),
                 'payments_by_method' => $session->payments
+                    ->groupBy('method')
+                    ->map(fn ($items) => round((float) $items->sum('amount'), 2)),
+                'expenses_by_method' => $session->expenses
                     ->groupBy('method')
                     ->map(fn ($items) => round((float) $items->sum('amount'), 2)),
             ];
@@ -205,15 +190,8 @@ class DashboardController extends Controller implements HasMiddleware
                     'lab_orders_overdue_count' => $labOrdersOverdueCount,
                 ],
                 'revenue_series' => $series,
-                'payments_by_method_today' => [
-                    'cash' => round((float) ($paymentsByMethodToday['cash'] ?? 0), 2),
-                    'card' => round((float) ($paymentsByMethodToday['card'] ?? 0), 2),
-                    'card_credit' => round((float) ($paymentsByMethodToday['card_credit'] ?? 0), 2),
-                    'transfer' => round((float) ($paymentsByMethodToday['transfer'] ?? 0), 2),
-                ],
                 'upcoming_appointments' => $upcomingAppointments,
                 'urgent_recalls' => $urgentRecalls,
-                'top_pending_balances' => $topPending,
                 'cash_session' => $cashSession,
             ],
         ]);
