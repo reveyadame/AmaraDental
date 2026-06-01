@@ -29,6 +29,7 @@ use App\Http\Controllers\OdontogramController;
 use App\Http\Controllers\PatientsController;
 use App\Http\Controllers\PrescriptionsController;
 use App\Http\Controllers\PrescriptionTemplatesController;
+use App\Http\Controllers\QuotesController;
 use App\Http\Controllers\RecallsController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SpecialistCommissionsController;
@@ -64,6 +65,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('users', UsersController::class);
 
     Route::apiResource('patients', PatientsController::class);
+
+    // Pre-check de eliminación: indica si un paciente se puede borrar y, si no,
+    // qué registros lo bloquean. Solo accesible para admin (policy).
+    Route::get('patients/{patient}/delete-preview', [PatientsController::class, 'deletePreview']);
 
     // Historia clínica anidada (upsert vía PUT).
     Route::get('patients/{patient}/medical-history', [MedicalHistoryController::class, 'show']);
@@ -139,9 +144,23 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('patients/{patient}/account', [ChargesController::class, 'patientAccount']);
     Route::post('charges/{charge}/cancel', [ChargesController::class, 'cancel']);
 
+    // Cotizaciones (presupuestos a pacientes).
+    Route::get('quotes', [QuotesController::class, 'index']);
+    Route::post('quotes', [QuotesController::class, 'store']);
+    Route::get('quotes/{quote}', [QuotesController::class, 'show']);
+    Route::put('quotes/{quote}', [QuotesController::class, 'update']);
+    Route::delete('quotes/{quote}', [QuotesController::class, 'destroy']);
+    Route::post('quotes/{quote}/sent', [QuotesController::class, 'markSent']);
+    Route::post('quotes/{quote}/accepted', [QuotesController::class, 'markAccepted']);
+    Route::post('quotes/{quote}/rejected', [QuotesController::class, 'markRejected']);
+    Route::post('quotes/{quote}/reopen', [QuotesController::class, 'reopen']);
+    Route::post('quotes/{quote}/convert', [QuotesController::class, 'convertToCharge']);
+
     // Agenda.
     Route::apiResource('appointments', AppointmentsController::class);
     Route::post('appointments/{appointment}/status', [AppointmentsController::class, 'changeStatus']);
+    // Marca la cita como no_show y descarta al paciente (solo si es "primera vez").
+    Route::post('appointments/{appointment}/no-show-discard', [AppointmentsController::class, 'markNoShowAndDiscardPatient']);
 
     // Bloqueos de agenda (horarios cerrados).
     Route::apiResource('agenda-blocks', AgendaBlocksController::class)

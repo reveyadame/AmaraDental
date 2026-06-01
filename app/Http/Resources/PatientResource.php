@@ -43,6 +43,7 @@ class PatientResource extends JsonResource
             'referred_by' => $this->referred_by,
             'notes' => $this->notes,
             'active' => $this->active,
+            'is_first_visit' => (bool) $this->is_first_visit,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
 

@@ -25,7 +25,9 @@ class StoreChargeRequest extends FormRequest
 
             'items' => ['required', 'array', 'min:1'],
             'items.*.treatment_id' => ['required', 'integer', 'exists:treatments,id'],
-            'items.*.specialist_id' => ['nullable', 'integer', 'exists:specialists,id'],
+            // Especialista obligatorio: queremos saber quién atendió para
+            // efectos de comisiones, reportes y trazabilidad clínica.
+            'items.*.specialist_id' => ['required', 'integer', 'exists:specialists,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:999'],
             'items.*.discount_id' => ['nullable', 'integer', 'exists:discounts,id'],
             'items.*.unit_price_override' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
@@ -35,6 +37,11 @@ class StoreChargeRequest extends FormRequest
             'payments.*.amount' => ['required', 'numeric', 'min:0.01', 'max:1000000'],
             'payments.*.reference' => ['nullable', 'string', 'max:120'],
             'payments.*.notes' => ['nullable', 'string', 'max:500'],
+
+            // Sobrepago opcional que se registrará como saldo a favor del
+            // paciente. El frontend lo separa explícitamente para que el
+            // cobro siempre cuadre (paid_total <= total).
+            'overpayment_credit_amount' => ['nullable', 'numeric', 'min:0.01', 'max:1000000'],
         ];
     }
 }

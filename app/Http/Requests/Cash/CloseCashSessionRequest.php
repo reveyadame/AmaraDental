@@ -24,9 +24,11 @@ class CloseCashSessionRequest extends FormRequest
             // Efectivo contado (obligatorio).
             'closing_amount' => ['required', 'numeric', 'min:0', 'max:1000000'],
 
-            // Tarjeta y transferencia: opcionales. Si no se mandan, no se
-            // registra contabilización para ese método pero el corte cierra.
+            // Tarjeta de débito, tarjeta de crédito y transferencia: opcionales.
+            // Si no se mandan, no se registra contabilización para ese método
+            // pero el corte cierra igual.
             'card_counted' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
+            'card_credit_counted' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
             'transfer_counted' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
 
             'close_notes' => ['nullable', 'string', 'max:500'],

@@ -24,6 +24,10 @@ class StoreChargePaymentRequest extends FormRequest
             'amount' => ['required', 'numeric', 'min:0.01', 'max:1000000'],
             'reference' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:500'],
+
+            // Sobrepago al abonar — el excedente se registra como saldo a
+            // favor del paciente. Mismo patrón que en StoreChargeRequest.
+            'overpayment_credit_amount' => ['nullable', 'numeric', 'min:0.01', 'max:1000000'],
         ];
     }
 }

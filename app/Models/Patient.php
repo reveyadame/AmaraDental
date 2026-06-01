@@ -43,6 +43,7 @@ class Patient extends Model implements Auditable
         'notes',
         'odontogram_diagnosis',
         'active',
+        'is_first_visit',
     ];
 
     protected function casts(): array
@@ -50,7 +51,18 @@ class Patient extends Model implements Auditable
         return [
             'date_of_birth' => 'date',
             'active' => 'boolean',
+            'is_first_visit' => 'boolean',
         ];
+    }
+
+    /**
+     * True cuando los campos mínimos del expediente NOM-004 están llenos
+     * (fecha de nacimiento + género). Se usa para limpiar `is_first_visit`
+     * automáticamente al editar.
+     */
+    public function hasMinimumClinicalRecord(): bool
+    {
+        return ! empty($this->date_of_birth) && ! empty($this->gender);
     }
 
     protected function fullName(): Attribute
@@ -66,5 +78,19 @@ class Patient extends Model implements Auditable
     public function consents(): HasMany
     {
         return $this->hasMany(Consent::class);
+    }
+
+    public function credits(): HasMany
+    {
+        return $this->hasMany(PatientCredit::class);
+    }
+
+    /**
+     * Saldo a favor disponible. Suma todos los movimientos de crédito —
+     * positivos (entradas) menos negativos (consumos).
+     */
+    public function creditBalance(): float
+    {
+        return round((float) $this->credits()->sum('amount'), 2);
     }
 }

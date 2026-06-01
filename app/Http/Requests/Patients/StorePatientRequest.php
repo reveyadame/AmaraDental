@@ -19,11 +19,16 @@ class StorePatientRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
+        // Alta rápida desde agenda: solo exige nombre + apellido + algún medio
+        // de contacto. Los campos NOM-004 se llenan al completar expediente.
+        $quick = $this->boolean('is_first_visit');
+
         return [
             'first_name' => ['required', 'string', 'max:120'],
             'last_name' => ['required', 'string', 'max:120'],
-            'date_of_birth' => ['required', 'date', 'before:today'],
-            'gender' => ['required', Rule::in(['M', 'F', 'Otro'])],
+            'date_of_birth' => [$quick ? 'nullable' : 'required', 'date', 'before:today'],
+            'gender' => [$quick ? 'nullable' : 'required', Rule::in(['M', 'F', 'Otro'])],
+            'is_first_visit' => ['sometimes', 'boolean'],
             'marital_status' => [
                 'nullable',
                 Rule::in(['soltero', 'casado', 'union_libre', 'divorciado', 'viudo', 'separado']),

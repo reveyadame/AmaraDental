@@ -114,12 +114,16 @@ class CashSessionsController extends Controller implements HasMiddleware
         // Sumas esperadas por método registradas durante la sesión.
         $cashTotal = (float) $cashSession->payments()->where('method', 'cash')->sum('amount');
         $cardTotal = (float) $cashSession->payments()->where('method', 'card')->sum('amount');
+        $cardCreditTotal = (float) $cashSession->payments()
+            ->where('method', 'card_credit')->sum('amount');
         $transferTotal = (float) $cashSession->payments()
             ->where('method', 'transfer')->sum('amount');
 
         // Egresos por método (salen de caja).
         $cashExpenses = (float) $cashSession->expenses()->where('method', 'cash')->sum('amount');
         $cardExpenses = (float) $cashSession->expenses()->where('method', 'card')->sum('amount');
+        $cardCreditExpenses = (float) $cashSession->expenses()
+            ->where('method', 'card_credit')->sum('amount');
         $transferExpenses = (float) $cashSession->expenses()
             ->where('method', 'transfer')->sum('amount');
 
@@ -131,11 +135,17 @@ class CashSessionsController extends Controller implements HasMiddleware
         $cashClosing = (float) $request->input('closing_amount');
         $cashDifference = round($cashClosing - $expectedCash, 2);
 
-        // Tarjeta / transferencia: cobros − egresos del periodo.
+        // Tarjeta débito / tarjeta crédito / transferencia: cobros − egresos del periodo.
         $cardCounted = $request->input('card_counted');
         $cardExpected = round($cardTotal - $cardExpenses, 2);
         $cardDifference = $cardCounted !== null
             ? round((float) $cardCounted - $cardExpected, 2)
+            : null;
+
+        $cardCreditCounted = $request->input('card_credit_counted');
+        $cardCreditExpected = round($cardCreditTotal - $cardCreditExpenses, 2);
+        $cardCreditDifference = $cardCreditCounted !== null
+            ? round((float) $cardCreditCounted - $cardCreditExpected, 2)
             : null;
 
         $transferCounted = $request->input('transfer_counted');
@@ -151,6 +161,9 @@ class CashSessionsController extends Controller implements HasMiddleware
             'card_counted' => $cardCounted !== null ? (float) $cardCounted : null,
             'card_expected' => $cardExpected,
             'card_difference' => $cardDifference,
+            'card_credit_counted' => $cardCreditCounted !== null ? (float) $cardCreditCounted : null,
+            'card_credit_expected' => $cardCreditExpected,
+            'card_credit_difference' => $cardCreditDifference,
             'transfer_counted' => $transferCounted !== null ? (float) $transferCounted : null,
             'transfer_expected' => $transferExpected,
             'transfer_difference' => $transferDifference,
