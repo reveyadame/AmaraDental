@@ -9,6 +9,7 @@ import {
   CreditCard,
   FileBarChart,
   FileSignature,
+  FileText,
   HandCoins,
   History,
   Home,
@@ -130,6 +131,13 @@ const NAV: NavItem[] = [
         perms: ['cash.operate'],
       },
     ],
+  },
+  {
+    to: '/cotizaciones',
+    label: 'Cotizaciones',
+    icon: FileText,
+    matchPrefix: true,
+    perms: ['quotes.manage'],
   },
   {
     to: '/comisiones',

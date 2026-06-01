@@ -1,11 +1,15 @@
-import { Check, MoreVertical } from 'lucide-react'
+import { Check, MoreVertical, UserX } from 'lucide-react'
 import { toast } from 'sonner'
-import { useQuickChangeAppointmentStatus } from './hooks'
+import {
+  useNoShowAndDiscardPatient,
+  useQuickChangeAppointmentStatus,
+} from './hooks'
 import {
   APPOINTMENT_STATUS_LABELS,
   type Appointment,
   type AppointmentStatus,
 } from '@/shared/types/agenda'
+import { useConfirm } from '@/shared/ui/confirm'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +45,10 @@ export function AppointmentStatusMenu({
   align = 'end',
 }: Props) {
   const mutation = useQuickChangeAppointmentStatus()
+  const noShowDiscard = useNoShowAndDiscardPatient()
+  const confirm = useConfirm()
+
+  const isFirstVisit = !!appointment.patient_is_first_visit
 
   const onChange = (status: AppointmentStatus) => {
     if (status === appointment.status) return
@@ -54,6 +62,43 @@ export function AppointmentStatusMenu({
         onError: () => toast.error('No fue posible cambiar el estado'),
       },
     )
+  }
+
+  const onNoShowAndDiscard = async () => {
+    const name = appointment.patient_name ?? 'el paciente'
+    const ok = await confirm({
+      title: `No llegó: ¿eliminar a ${name}?`,
+      description:
+        'Como es un paciente de primera vez, al confirmar se marca la cita como ' +
+        '"No asistió" y se elimina su registro. Sus citas pendientes (si tiene ' +
+        'otras) también se borrarán. Si ya tiene cobros u otra huella, solo se ' +
+        'marca la cita y el paciente se conserva.',
+      confirmText: 'Sí, no llegó',
+      cancelText: 'Cancelar',
+      variant: 'destructive',
+    })
+    if (!ok) return
+
+    noShowDiscard.mutate(appointment.id, {
+      onSuccess: (data) => {
+        if (data.patient_deleted) {
+          toast.success(`${data.patient_name} eliminado (no se presentó)`)
+        } else {
+          const fields = Object.keys(data.blockers).join(', ')
+          toast.warning(
+            `Solo se marcó como "No asistió". El paciente tiene registros (${fields}) y no se eliminó.`,
+          )
+        }
+      },
+      onError: (e: unknown) => {
+        const msg =
+          e && typeof e === 'object' && 'response' in e
+            ? (e as { response?: { data?: { message?: string } } }).response?.data
+                ?.message
+            : undefined
+        toast.error(msg ?? 'No fue posible aplicar la acción')
+      },
+    })
   }
 
   return (
@@ -75,7 +120,7 @@ export function AppointmentStatusMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align={align}
-        className="w-52"
+        className="w-60"
         onClick={(e) => e.stopPropagation()}
       >
         <DropdownMenuLabel className="text-xs">
@@ -109,6 +154,26 @@ export function AppointmentStatusMenu({
             )
           },
         )}
+
+        {isFirstVisit ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[10px] text-muted-foreground font-normal pt-1">
+              Paciente de primera vez
+            </DropdownMenuLabel>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault()
+                onNoShowAndDiscard()
+              }}
+              className="gap-2 text-destructive focus:text-destructive"
+              disabled={noShowDiscard.isPending}
+            >
+              <UserX className="size-3.5 shrink-0" />
+              <span className="flex-1">No llegó · eliminar paciente</span>
+            </DropdownMenuItem>
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   )

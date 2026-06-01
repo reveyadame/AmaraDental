@@ -41,6 +41,9 @@ final class Permissions
     public const CHARGES_CREATE = 'charges.create';              // crear cobros, abonar pagos
     public const CHARGES_CANCEL = 'charges.cancel';              // superior — cancelar cobros y pagos
 
+    // ─── Cotizaciones (presupuestos a pacientes) ────────────────────────
+    public const QUOTES_MANAGE = 'quotes.manage';                // crear, editar, listar cotizaciones
+
     // ─── Comisiones ─────────────────────────────────────────────────────
     public const COMMISSIONS_MANAGE = 'commissions.manage';
 
@@ -81,6 +84,7 @@ final class Permissions
             self::CASH_DELETE_MOVEMENTS,
             self::CHARGES_CREATE,
             self::CHARGES_CANCEL,
+            self::QUOTES_MANAGE,
             self::COMMISSIONS_MANAGE,
             self::MEMBERSHIPS_MANAGE,
             self::LABS_MANAGE,
@@ -125,6 +129,12 @@ final class Permissions
             'caja' => [
                 self::CASH_OPERATE,
                 self::CHARGES_CREATE,
+                self::QUOTES_MANAGE,
+                self::PATIENTS_READ_BASIC,
+            ],
+
+            'cotizaciones' => [
+                self::QUOTES_MANAGE,
                 self::PATIENTS_READ_BASIC,
             ],
 

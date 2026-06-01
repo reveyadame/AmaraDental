@@ -8,9 +8,13 @@ import {
   Phone,
   Stethoscope,
   PencilLine,
+  Sparkles,
+  Trash2,
 } from 'lucide-react'
 import { usePatient } from './hooks'
 import { PatientFormDialog } from './PatientFormDialog'
+import { DeletePatientDialog } from './DeletePatientDialog'
+import { useAuth } from '@/shared/auth/permissions'
 import { COUNTRY_LABELS } from './regions'
 import { MARITAL_STATUS_LABELS } from '@/shared/types/patient'
 import { MedicalHistoryTab } from './MedicalHistoryTab'
@@ -21,6 +25,7 @@ import { PrescriptionsTab } from '@/features/prescriptions/PrescriptionsTab'
 import { PatientAccountTab } from '@/features/cash/PatientAccountTab'
 import { PatientMembershipTab } from '@/features/memberships/PatientMembershipTab'
 import { PatientLabOrdersTab } from '@/features/labs/PatientLabOrdersTab'
+import { PatientQuotesTab } from '@/features/quotes/PatientQuotesTab'
 import { PatientRecallsTab } from '@/features/recalls/PatientRecallsTab'
 import { useMe } from '@/features/auth/hooks'
 import { useBranding } from '@/shared/theme/ThemeProvider'
@@ -50,7 +55,9 @@ export function PatientDetailPage() {
   const patient = usePatient(id)
   const { branding } = useBranding()
   const [edit, setEdit] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const { data: me } = useMe()
+  const { isAdmin } = useAuth()
   // Tabs clínicas requieren permiso `clinical.view`. Quienes solo hacen
   // caja/agenda no ven historia, odontograma, recetas ni consentimientos.
   const canViewClinical = me?.permissions.includes('clinical.view') ?? false
@@ -63,6 +70,7 @@ export function PatientDetailPage() {
   const canMemberships = perms.includes('memberships.manage')
   const canLabs = perms.includes('labs.manage')
   const canRecalls = perms.includes('recalls.manage')
+  const canQuotes = perms.includes('quotes.manage')
 
   if (!id || Number.isNaN(id)) return <Navigate to="/pacientes" replace />
 
@@ -93,17 +101,24 @@ export function PatientDetailPage() {
                   {initials(patient.data)}
                 </div>
                 <div className="space-y-1">
-                  <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                  <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-2">
                     {patient.data.full_name}
+                    {patient.data.is_first_visit ? (
+                      <Badge className="bg-lime-100 text-lime-900 border border-lime-200 hover:bg-lime-100 gap-1">
+                        <Sparkles className="size-3" /> Primera vez
+                      </Badge>
+                    ) : null}
                   </h1>
                   <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <Badge variant="secondary">
-                      {patient.data.gender === 'F'
-                        ? 'Femenino'
-                        : patient.data.gender === 'M'
-                          ? 'Masculino'
-                          : 'Otro'}
-                    </Badge>
+                    {patient.data.gender ? (
+                      <Badge variant="secondary">
+                        {patient.data.gender === 'F'
+                          ? 'Femenino'
+                          : patient.data.gender === 'M'
+                            ? 'Masculino'
+                            : 'Otro'}
+                      </Badge>
+                    ) : null}
                     {patient.data.age != null ? (
                       <span className="inline-flex items-center gap-1">
                         <CalendarDays className="size-3.5" /> {patient.data.age} años
@@ -116,13 +131,51 @@ export function PatientDetailPage() {
                   </div>
                 </div>
               </div>
-              {canManage ? (
-                <Button variant="outline" onClick={() => setEdit(true)}>
-                  <PencilLine className="size-4" /> Editar
-                </Button>
-              ) : null}
+              <div className="flex flex-wrap gap-2">
+                {canManage ? (
+                  <Button variant="outline" onClick={() => setEdit(true)}>
+                    <PencilLine className="size-4" /> Editar
+                  </Button>
+                ) : null}
+                {isAdmin ? (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setDeleteOpen(true)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="size-4" /> Eliminar
+                  </Button>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
+
+          {patient.data.is_first_visit ? (
+            <Card className="border-lime-300 bg-lime-50 dark:bg-lime-950/20">
+              <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <span className="grid size-9 place-items-center rounded-full bg-lime-200/60 text-lime-900 dark:text-lime-200 shrink-0">
+                    <Sparkles className="size-4" />
+                  </span>
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium text-foreground">
+                      Paciente de primera vez
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Capturado rápido desde la agenda. Cuando llegue, completa
+                      su fecha de nacimiento y género para abrir el expediente
+                      formal — la etiqueta desaparece sola.
+                    </p>
+                  </div>
+                </div>
+                {canManage ? (
+                  <Button size="sm" onClick={() => setEdit(true)}>
+                    Completar expediente
+                  </Button>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Tabs defaultValue="datos" className="space-y-4">
             {/* Scroll horizontal cuando no caben todos los tabs (móvil). */}
@@ -131,6 +184,9 @@ export function PatientDetailPage() {
                 <TabsTrigger value="datos">Datos</TabsTrigger>
                 {canCash ? (
                   <TabsTrigger value="cuenta">Estado de cuenta</TabsTrigger>
+                ) : null}
+                {canQuotes ? (
+                  <TabsTrigger value="cotizaciones">Cotizaciones</TabsTrigger>
                 ) : null}
                 {canMemberships ? (
                   <TabsTrigger value="membresia">Membresía</TabsTrigger>
@@ -267,6 +323,12 @@ export function PatientDetailPage() {
               </TabsContent>
             ) : null}
 
+            {canQuotes ? (
+              <TabsContent value="cotizaciones">
+                <PatientQuotesTab patient={patient.data} />
+              </TabsContent>
+            ) : null}
+
             {canMemberships ? (
               <TabsContent value="membresia">
                 <PatientMembershipTab patient={patient.data} />
@@ -323,6 +385,14 @@ export function PatientDetailPage() {
           </Tabs>
 
           <PatientFormDialog open={edit} onOpenChange={setEdit} patient={patient.data} />
+          {isAdmin ? (
+            <DeletePatientDialog
+              patientId={patient.data.id}
+              patientName={patient.data.full_name}
+              open={deleteOpen}
+              onOpenChange={setDeleteOpen}
+            />
+          ) : null}
         </>
       )}
     </div>

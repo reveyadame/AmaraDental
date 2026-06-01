@@ -23,8 +23,10 @@ import { formatMXN } from '@/shared/lib/utils'
 
 const methodLabel: Record<PaymentMethod, string> = {
   cash: 'Efectivo',
-  card: 'Tarjeta',
+  card: 'Tarjeta de débito',
+  card_credit: 'Tarjeta de crédito',
   transfer: 'Transferencia',
+  credit: 'Saldo a favor',
 }
 
 function formatDateTime(iso: string | null): string {

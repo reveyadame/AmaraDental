@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Lock } from 'lucide-react'
+import { Lock, Sparkles } from 'lucide-react'
 import {
   APPOINTMENT_STATUS_LABELS,
   type AgendaBlock,
@@ -371,7 +371,9 @@ export function AgendaTimeGrid({
                           onSelectAppointment(appt)
                         }
                       }}
-                      title={`${formatTime(appt.starts_at)} · ${appt.patient_name ?? ''}`}
+                      title={`${formatTime(appt.starts_at)} · ${appt.patient_name ?? ''}${
+                        appt.patient_is_first_visit ? ' · Primera vez' : ''
+                      }`}
                       className={cn(
                         'group absolute z-20 overflow-hidden rounded-md border-l-4 px-1.5 py-0.5 text-left shadow-sm transition cursor-pointer',
                         style.bg,
@@ -393,6 +395,12 @@ export function AgendaTimeGrid({
                               <span className="font-medium tabular-nums opacity-80">
                                 {formatTime(appt.starts_at)}
                               </span>{' '}
+                              {appt.patient_is_first_visit ? (
+                                <Sparkles
+                                  className="inline size-3 -mt-0.5 mr-0.5 text-lime-700"
+                                  aria-label="Primera vez"
+                                />
+                              ) : null}
                               {appt.patient_name ?? '—'}
                             </p>
                           ) : (
@@ -400,8 +408,14 @@ export function AgendaTimeGrid({
                               <p className="truncate text-[10px] font-medium tabular-nums opacity-80">
                                 {formatTime(appt.starts_at)}–{formatTime(appt.ends_at)}
                               </p>
-                              <p className="truncate text-xs font-semibold">
-                                {appt.patient_name ?? '—'}
+                              <p className="truncate text-xs font-semibold flex items-center gap-1">
+                                {appt.patient_is_first_visit ? (
+                                  <Sparkles
+                                    className="size-3 shrink-0 text-lime-700"
+                                    aria-label="Primera vez"
+                                  />
+                                ) : null}
+                                <span className="truncate">{appt.patient_name ?? '—'}</span>
                               </p>
                               {appt.treatment_name ? (
                                 <p className="truncate text-[10px] opacity-80">

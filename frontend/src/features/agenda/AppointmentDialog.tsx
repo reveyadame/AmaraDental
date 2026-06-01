@@ -210,7 +210,11 @@ export function AppointmentDialog({
           {!isEdit ? (
             <div className="space-y-1.5">
               <Label>Paciente</Label>
-              <PatientPicker selected={patient} onSelect={setPatient} />
+              <PatientPicker
+                selected={patient}
+                onSelect={setPatient}
+                allowQuickCreate
+              />
             </div>
           ) : (
             <div className="rounded-md bg-muted/40 p-3 text-sm">

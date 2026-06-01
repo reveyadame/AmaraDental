@@ -68,6 +68,7 @@ export function CashSessionCard() {
   const totalCobrado = s.payments_summary?.total ?? 0
   const cashTotal = s.payments_summary?.by_method?.cash ?? 0
   const cardTotal = s.payments_summary?.by_method?.card ?? 0
+  const cardCreditTotal = s.payments_summary?.by_method?.card_credit ?? 0
   const transferTotal = s.payments_summary?.by_method?.transfer ?? 0
   const count = s.payments_summary?.count ?? 0
 
@@ -102,7 +103,7 @@ export function CashSessionCard() {
 
           <Separator />
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             <div>
               <p className="text-xs text-muted-foreground">Apertura</p>
               <p className="tabular-nums text-foreground font-medium">
@@ -122,9 +123,21 @@ export function CashSessionCard() {
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Tarjeta + Transf.</p>
+              <p className="text-xs text-muted-foreground">Tarj. débito</p>
               <p className="tabular-nums text-foreground font-medium">
-                {formatMXN(cardTotal + transferTotal)}
+                {formatMXN(cardTotal)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Tarj. crédito</p>
+              <p className="tabular-nums text-foreground font-medium">
+                {formatMXN(cardCreditTotal)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Transferencia</p>
+              <p className="tabular-nums text-foreground font-medium">
+                {formatMXN(transferTotal)}
               </p>
             </div>
           </div>

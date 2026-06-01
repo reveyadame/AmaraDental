@@ -20,6 +20,7 @@ enum Role: string
     case Patients = 'pacientes';
     case Catalogs = 'catalogos';
     case Cash = 'caja';
+    case Quotes = 'cotizaciones';
     case CommissionPayments = 'pago_comisiones';
     case Memberships = 'membresias';
     case Labs = 'laboratorios';
@@ -34,6 +35,7 @@ enum Role: string
             self::Patients => 'Pacientes',
             self::Catalogs => 'Catálogos',
             self::Cash => 'Caja',
+            self::Quotes => 'Cotizaciones',
             self::CommissionPayments => 'Pago de comisiones',
             self::Memberships => 'Membresías',
             self::Labs => 'Laboratorios',

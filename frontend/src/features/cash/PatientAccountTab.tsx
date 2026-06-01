@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CreditCard, Plus, Printer, ReceiptText, Wallet } from 'lucide-react'
+import { CreditCard, Plus, Printer, ReceiptText, Sparkles, Wallet } from 'lucide-react'
 import { usePatientAccount } from './hooks'
 import { ChargeDetailDialog } from './ChargeDetailDialog'
 import { useMe } from '@/features/auth/hooks'
@@ -18,7 +18,10 @@ import {
   TableRow,
 } from '@/shared/ui/table'
 import { cn, formatMXN } from '@/shared/lib/utils'
-import { CHARGE_STATUS_BADGE } from '@/shared/types/cash'
+import {
+  CHARGE_STATUS_BADGE,
+  PATIENT_CREDIT_SOURCE_LABEL,
+} from '@/shared/types/cash'
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
@@ -48,9 +51,45 @@ export function PatientAccountTab({ patientId }: { patientId: number }) {
 
   const a = account.data
   const hasBalance = a.totals.balance > 0
+  const hasCredit = (a.totals.credit_balance ?? 0) > 0
 
   return (
     <div className="space-y-5">
+      {hasCredit ? (
+        <Card className="border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <span className="grid size-9 place-items-center rounded-full bg-emerald-200/60 text-emerald-700 dark:text-emerald-300 shrink-0">
+                <Sparkles className="size-4" />
+              </span>
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-foreground">
+                  Saldo a favor:{' '}
+                  <span className="text-emerald-700 tabular-nums">
+                    {formatMXN(a.totals.credit_balance)}
+                  </span>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Se puede usar como medio de pago en el próximo cobro o para
+                  abonar a un saldo pendiente.
+                </p>
+              </div>
+            </div>
+            {canCharge && hasBalance ? (
+              <Button size="sm" variant="outline" asChild>
+                <Link
+                  to={`/caja/cobros/${
+                    a.charges.find((c) => c.balance > 0 && c.status !== 'cancelled')?.id
+                  }/pagar`}
+                >
+                  Aplicar a saldo pendiente
+                </Link>
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card>
           <CardContent className="p-4">
@@ -123,7 +162,7 @@ export function PatientAccountTab({ patientId }: { patientId: number }) {
           </Button>
           {canCharge ? (
             <Button asChild size="sm">
-              <Link to="/caja/nuevo">
+              <Link to={`/caja/nuevo?patient_id=${patientId}`}>
                 <Plus className="size-4" /> Nuevo cobro
               </Link>
             </Button>
@@ -262,6 +301,56 @@ export function PatientAccountTab({ patientId }: { patientId: number }) {
             </Button>
           </CardContent>
         </Card>
+      ) : null}
+
+      {a.credit_movements && a.credit_movements.length > 0 ? (
+        <div className="space-y-2">
+          <h3 className="text-base font-semibold text-foreground">
+            Movimientos del saldo a favor
+          </h3>
+          <Card>
+            <Table className="min-w-[640px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Concepto</TableHead>
+                  <TableHead className="text-right">Importe</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {a.credit_movements.map((m) => {
+                  const positive = m.amount > 0
+                  return (
+                    <TableRow key={m.id}>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(m.created_at)}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <p className="text-foreground">
+                          {PATIENT_CREDIT_SOURCE_LABEL[m.source] ?? m.source}
+                        </p>
+                        {m.notes ? (
+                          <p className="text-xs text-muted-foreground">
+                            {m.notes}
+                          </p>
+                        ) : null}
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          'text-right tabular-nums font-medium',
+                          positive ? 'text-emerald-600' : 'text-muted-foreground',
+                        )}
+                      >
+                        {positive ? '+ ' : '− '}
+                        {formatMXN(Math.abs(m.amount))}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </Card>
+        </div>
       ) : null}
 
       <ChargeDetailDialog

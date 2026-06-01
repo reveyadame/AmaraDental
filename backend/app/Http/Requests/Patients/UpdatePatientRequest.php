@@ -28,8 +28,12 @@ class UpdatePatientRequest extends FormRequest
         return [
             'first_name' => ['sometimes', 'required', 'string', 'max:120'],
             'last_name' => ['sometimes', 'required', 'string', 'max:120'],
-            'date_of_birth' => ['sometimes', 'required', 'date', 'before:today'],
-            'gender' => ['sometimes', 'required', Rule::in(['M', 'F', 'Otro'])],
+            // Nullable en update: si el paciente está en estado "primera vez",
+            // aún no llenó fecha de nacimiento ni género. El controller baja
+            // la bandera automáticamente cuando ambos quedan llenos.
+            'date_of_birth' => ['sometimes', 'nullable', 'date', 'before:today'],
+            'gender' => ['sometimes', 'nullable', Rule::in(['M', 'F', 'Otro'])],
+            'is_first_visit' => ['sometimes', 'boolean'],
             'marital_status' => [
                 'nullable',
                 Rule::in(['soltero', 'casado', 'union_libre', 'divorciado', 'viudo', 'separado']),

@@ -16,9 +16,18 @@ class CashSessionResource extends JsonResource
     public function toArray(Request $request): array
     {
         $paymentsSummary = $this->whenLoaded('payments', function () {
+            // `total` cuenta solo dinero entrante real (efectivo / tarjeta de
+            // débito / tarjeta de crédito / transferencia). Los pagos con
+            // `credit` (saldo a favor) no son ingreso de caja — se listan
+            // aparte en `by_method.credit` para trazabilidad.
+            $cashFlowMethods = ['cash', 'card', 'card_credit', 'transfer'];
+            $realInflow = $this->payments
+                ->whereIn('method', $cashFlowMethods)
+                ->sum('amount');
+
             return [
                 'count' => $this->payments->count(),
-                'total' => round((float) $this->payments->sum('amount'), 2),
+                'total' => round((float) $realInflow, 2),
                 'by_method' => $this->payments
                     ->groupBy('method')
                     ->map(fn ($items) => round((float) $items->sum('amount'), 2)),
@@ -51,13 +60,20 @@ class CashSessionResource extends JsonResource
                 ? (float) $this->expected_cash : null,
             'difference' => $this->difference !== null
                 ? (float) $this->difference : null,
-            // Tarjeta
+            // Tarjeta de débito
             'card_counted' => $this->card_counted !== null
                 ? (float) $this->card_counted : null,
             'card_expected' => $this->card_expected !== null
                 ? (float) $this->card_expected : null,
             'card_difference' => $this->card_difference !== null
                 ? (float) $this->card_difference : null,
+            // Tarjeta de crédito
+            'card_credit_counted' => $this->card_credit_counted !== null
+                ? (float) $this->card_credit_counted : null,
+            'card_credit_expected' => $this->card_credit_expected !== null
+                ? (float) $this->card_credit_expected : null,
+            'card_credit_difference' => $this->card_credit_difference !== null
+                ? (float) $this->card_credit_difference : null,
             // Transferencia
             'transfer_counted' => $this->transfer_counted !== null
                 ? (float) $this->transfer_counted : null,

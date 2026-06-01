@@ -38,14 +38,18 @@ import { accent } from '@/shared/lib/module-accents'
 
 const METHOD_LABEL: Record<string, string> = {
   cash: 'Efectivo',
-  card: 'Tarjeta',
+  card: 'Tarj. débito',
+  card_credit: 'Tarj. crédito',
   transfer: 'Transferencia',
+  credit: 'Saldo a favor',
 }
 
 const METHOD_BADGE: Record<string, string> = {
   cash: 'bg-emerald-100 text-emerald-900 border-emerald-200',
   card: 'bg-sky-100 text-sky-900 border-sky-200',
+  card_credit: 'bg-indigo-100 text-indigo-900 border-indigo-200',
   transfer: 'bg-violet-100 text-violet-900 border-violet-200',
+  credit: 'bg-lime-100 text-lime-900 border-lime-200',
 }
 
 function todayISO(): string {
@@ -66,7 +70,7 @@ function formatDateTime(iso: string | null): string {
 }
 
 type MovementType = 'all' | 'payment' | 'expense'
-type MethodFilter = 'all' | 'cash' | 'card' | 'transfer'
+type MethodFilter = 'all' | 'cash' | 'card' | 'card_credit' | 'transfer' | 'credit'
 
 const PER_PAGE = 25
 
@@ -187,8 +191,10 @@ export function CashMovementsPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="cash">Efectivo</SelectItem>
-                  <SelectItem value="card">Tarjeta</SelectItem>
+                  <SelectItem value="card">Tarjeta de débito</SelectItem>
+                  <SelectItem value="card_credit">Tarjeta de crédito</SelectItem>
                   <SelectItem value="transfer">Transferencia</SelectItem>
+                  <SelectItem value="credit">Saldo a favor</SelectItem>
                 </SelectContent>
               </Select>
             </div>

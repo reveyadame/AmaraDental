@@ -20,14 +20,18 @@ import { formatMXN } from '@/shared/lib/utils'
 
 const METHOD_LABELS: Record<string, string> = {
   cash: 'Efectivo',
-  card: 'Tarjeta',
+  card: 'Tarjeta de débito',
+  card_credit: 'Tarjeta de crédito',
   transfer: 'Transferencia',
+  credit: 'Saldo a favor',
 }
 
 const METHOD_COLORS: Record<string, string> = {
   cash: '#10b981',
   card: '#3b82f6',
+  card_credit: '#6366f1',
   transfer: '#f59e0b',
+  credit: '#84cc16',
 }
 
 function formatDay(iso: string): string {

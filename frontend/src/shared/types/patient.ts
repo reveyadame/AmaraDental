@@ -44,6 +44,12 @@ export interface Patient {
   referred_by: string | null
   notes: string | null
   active: boolean
+  /**
+   * True cuando el paciente se dio de alta en modo "primera vez" desde la
+   * agenda y aún no tiene los campos mínimos del expediente (fecha de
+   * nacimiento + género). El backend baja la bandera al actualizarlos.
+   */
+  is_first_visit: boolean
   created_at: string | null
   updated_at: string | null
   medical_history?: MedicalHistory | null

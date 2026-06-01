@@ -95,19 +95,23 @@ export function CloseSessionDialog({ open, onOpenChange, session }: Props) {
   const mutation = useCloseCashSession(session.id)
   const cashCollected = session.payments_summary?.by_method?.cash ?? 0
   const cardCollected = session.payments_summary?.by_method?.card ?? 0
+  const cardCreditCollected = session.payments_summary?.by_method?.card_credit ?? 0
   const transferCollected = session.payments_summary?.by_method?.transfer ?? 0
   const cashExpenses = session.expenses_summary?.by_method?.cash ?? 0
   const cardExpenses = session.expenses_summary?.by_method?.card ?? 0
+  const cardCreditExpenses = session.expenses_summary?.by_method?.card_credit ?? 0
   const transferExpenses = session.expenses_summary?.by_method?.transfer ?? 0
   // Esperado = cobros − egresos por método (+ apertura para efectivo).
   const expectedCash = +(
     session.opening_amount + cashCollected - cashExpenses
   ).toFixed(2)
   const expectedCard = +(cardCollected - cardExpenses).toFixed(2)
+  const expectedCardCredit = +(cardCreditCollected - cardCreditExpenses).toFixed(2)
   const expectedTransfer = +(transferCollected - transferExpenses).toFixed(2)
 
   const [cashCounted, setCashCounted] = useState(String(expectedCash))
   const [cardCounted, setCardCounted] = useState('')
+  const [cardCreditCounted, setCardCreditCounted] = useState('')
   const [transferCounted, setTransferCounted] = useState('')
   const [notes, setNotes] = useState('')
 
@@ -116,6 +120,7 @@ export function CloseSessionDialog({ open, onOpenChange, session }: Props) {
     if (open) {
       setCashCounted(String(expectedCash))
       setCardCounted(expectedCard > 0 ? String(expectedCard) : '')
+      setCardCreditCounted(expectedCardCredit > 0 ? String(expectedCardCredit) : '')
       setTransferCounted(expectedTransfer > 0 ? String(expectedTransfer) : '')
       setNotes('')
     }
@@ -128,6 +133,9 @@ export function CloseSessionDialog({ open, onOpenChange, session }: Props) {
   const totalDifference =
     cashDiff +
     (cardCounted !== '' ? Number(cardCounted) - expectedCard : 0) +
+    (cardCreditCounted !== ''
+      ? Number(cardCreditCounted) - expectedCardCredit
+      : 0) +
     (transferCounted !== '' ? Number(transferCounted) - expectedTransfer : 0)
 
   const onSubmit = (e: React.FormEvent) => {
@@ -140,6 +148,8 @@ export function CloseSessionDialog({ open, onOpenChange, session }: Props) {
       {
         closing_amount: cashNumber,
         card_counted: cardCounted !== '' ? Number(cardCounted) : undefined,
+        card_credit_counted:
+          cardCreditCounted !== '' ? Number(cardCreditCounted) : undefined,
         transfer_counted: transferCounted !== '' ? Number(transferCounted) : undefined,
         close_notes: notes || undefined,
       },
@@ -183,27 +193,34 @@ export function CloseSessionDialog({ open, onOpenChange, session }: Props) {
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">
               Cobros del turno
             </p>
-            <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
               <div>
                 <p className="text-muted-foreground">Efectivo</p>
                 <p className="tabular-nums">{formatMXN(cashCollected)}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Tarjeta</p>
+                <p className="text-muted-foreground">Tarj. débito</p>
                 <p className="tabular-nums">{formatMXN(cardCollected)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Tarj. crédito</p>
+                <p className="tabular-nums">{formatMXN(cardCreditCollected)}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Transferencia</p>
                 <p className="tabular-nums">{formatMXN(transferCollected)}</p>
               </div>
             </div>
-            {(cashExpenses > 0 || cardExpenses > 0 || transferExpenses > 0) ? (
+            {(cashExpenses > 0 ||
+              cardExpenses > 0 ||
+              cardCreditExpenses > 0 ||
+              transferExpenses > 0) ? (
               <>
                 <Separator className="my-2" />
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">
                   Egresos del turno
                 </p>
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                   <div>
                     <p className="text-muted-foreground">Efectivo</p>
                     <p className="tabular-nums text-destructive">
@@ -211,9 +228,15 @@ export function CloseSessionDialog({ open, onOpenChange, session }: Props) {
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Tarjeta</p>
+                    <p className="text-muted-foreground">Tarj. débito</p>
                     <p className="tabular-nums text-destructive">
                       −{formatMXN(cardExpenses)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Tarj. crédito</p>
+                    <p className="tabular-nums text-destructive">
+                      −{formatMXN(cardCreditExpenses)}
                     </p>
                   </div>
                   <div>
@@ -239,11 +262,20 @@ export function CloseSessionDialog({ open, onOpenChange, session }: Props) {
 
           <MethodSection
             icon={CardIcon}
-            label="Tarjeta confirmada"
+            label="Tarjeta de débito confirmada"
             expected={expectedCard}
             counted={cardCounted}
             onChange={setCardCounted}
-            helper="Compara contra el reporte de tu terminal de pago (descontando egresos con tarjeta)."
+            helper="Compara contra el reporte de tu terminal (transacciones con tarjeta de débito)."
+          />
+
+          <MethodSection
+            icon={CardIcon}
+            label="Tarjeta de crédito confirmada"
+            expected={expectedCardCredit}
+            counted={cardCreditCounted}
+            onChange={setCardCreditCounted}
+            helper="Compara contra el reporte de tu terminal (transacciones con tarjeta de crédito)."
           />
 
           <MethodSection

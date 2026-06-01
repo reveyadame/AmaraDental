@@ -67,6 +67,27 @@ export async function deleteAppointment(id: number): Promise<void> {
   await api.delete(`/api/appointments/${id}`)
 }
 
+export interface NoShowDiscardResponse {
+  patient_deleted: boolean
+  patient_name: string
+  blockers: Record<string, number>
+  /** null cuando el paciente fue eliminado (la cita cayó en cascada). */
+  appointment: Appointment | null
+}
+
+/**
+ * Marca la cita como no_show y, si el paciente es "primera vez" y no
+ * tiene otros registros, elimina el paciente (la cita se borra en cascada).
+ */
+export async function markNoShowAndDiscardPatient(
+  id: number,
+): Promise<NoShowDiscardResponse> {
+  const { data } = await api.post<ApiEnvelope<NoShowDiscardResponse>>(
+    `/api/appointments/${id}/no-show-discard`,
+  )
+  return data.data
+}
+
 export async function getIcsFeedToken(): Promise<IcsFeedInfo | null> {
   const { data } = await api.get<{ data: IcsFeedInfo | null }>('/api/agenda/feed-token')
   return data.data

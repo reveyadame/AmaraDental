@@ -1,6 +1,54 @@
 export type CashSessionStatus = 'open' | 'closed'
-export type PaymentMethod = 'cash' | 'card' | 'transfer'
+/**
+ * `card` = tarjeta de débito (valor histórico). Las tarjetas de crédito
+ * usan `card_credit`. Se separan para conciliar contra estados de cuenta
+ * de banco y para reportar comisiones bancarias por separado.
+ */
+export type PaymentMethod =
+  | 'cash'
+  | 'card'
+  | 'card_credit'
+  | 'transfer'
+  | 'credit'
 export type ChargeStatus = 'pending' | 'partial' | 'paid' | 'cancelled'
+
+export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
+  cash: 'Efectivo',
+  card: 'Tarjeta de débito',
+  card_credit: 'Tarjeta de crédito',
+  transfer: 'Transferencia',
+  credit: 'Saldo a favor',
+}
+
+export type PatientCreditSource =
+  | 'overpayment'
+  | 'applied_to_charge'
+  | 'manual_add'
+  | 'manual_remove'
+  | 'refund_overpayment'
+  | 'refund_application'
+
+export const PATIENT_CREDIT_SOURCE_LABEL: Record<PatientCreditSource, string> = {
+  overpayment: 'Sobrepago',
+  applied_to_charge: 'Aplicado a cobro',
+  manual_add: 'Ajuste manual (+)',
+  manual_remove: 'Ajuste manual (−)',
+  refund_overpayment: 'Reverso de sobrepago',
+  refund_application: 'Reverso de aplicación',
+}
+
+export interface PatientCreditMovement {
+  id: number
+  patient_id: number
+  amount: number
+  source: PatientCreditSource
+  charge_id: number | null
+  charge_payment_id: number | null
+  notes: string | null
+  created_by_user_id: number | null
+  created_by_name?: string | null
+  created_at: string | null
+}
 
 export type CashMovementType = 'payment' | 'expense'
 
@@ -106,10 +154,14 @@ export interface CashSession {
   closing_amount: number | null
   expected_cash: number | null
   difference: number | null
-  // Tarjeta
+  // Tarjeta de débito
   card_counted: number | null
   card_expected: number | null
   card_difference: number | null
+  // Tarjeta de crédito
+  card_credit_counted: number | null
+  card_credit_expected: number | null
+  card_credit_difference: number | null
   // Transferencia
   transfer_counted: number | null
   transfer_expected: number | null

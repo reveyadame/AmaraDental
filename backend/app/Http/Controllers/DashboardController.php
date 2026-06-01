@@ -208,6 +208,7 @@ class DashboardController extends Controller implements HasMiddleware
                 'payments_by_method_today' => [
                     'cash' => round((float) ($paymentsByMethodToday['cash'] ?? 0), 2),
                     'card' => round((float) ($paymentsByMethodToday['card'] ?? 0), 2),
+                    'card_credit' => round((float) ($paymentsByMethodToday['card_credit'] ?? 0), 2),
                     'transfer' => round((float) ($paymentsByMethodToday['transfer'] ?? 0), 2),
                 ],
                 'upcoming_appointments' => $upcomingAppointments,

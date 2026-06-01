@@ -51,8 +51,20 @@ class PatientPolicy
 
     public function delete(User $user, Patient $patient): bool
     {
-        // Toda eliminación queda restringida al Administrador.
-        return $user->hasRole(Role::Admin->value);
+        // Regla general: solo Administrador puede eliminar pacientes.
+        if ($user->hasRole(Role::Admin->value)) {
+            return true;
+        }
+
+        // Excepción: pacientes capturados como "primera vez" desde la agenda
+        // pueden eliminarse por quienes operan citas, cuando confirman que
+        // el paciente no se presentó — sirve para limpiar capturas que ya
+        // no van a usarse, sin requerir que un admin lo haga.
+        if ($patient->is_first_visit && $user->can(Permissions::APPOINTMENTS_MANAGE)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function viewClinical(User $user, Patient $patient): bool

@@ -34,6 +34,7 @@ export interface Appointment {
   id: number
   patient_id: number
   patient_name?: string
+  patient_is_first_visit?: boolean
   specialist_id: number
   specialist_name?: string
   treatment_id: number | null

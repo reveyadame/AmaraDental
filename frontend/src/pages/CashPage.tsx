@@ -48,8 +48,10 @@ import { useMe } from '@/features/auth/hooks'
 
 const METHOD_LABEL: Record<string, string> = {
   cash: 'Efectivo',
-  card: 'Tarjeta',
+  card: 'Tarjeta de débito',
+  card_credit: 'Tarjeta de crédito',
   transfer: 'Transferencia',
+  credit: 'Saldo a favor',
 }
 
 function formatTime(iso: string | null): string {

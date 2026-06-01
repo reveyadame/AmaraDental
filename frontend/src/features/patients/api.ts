@@ -28,8 +28,10 @@ export async function getPatient(id: number): Promise<Patient> {
 export interface PatientFormPayload {
   first_name: string
   last_name: string
-  date_of_birth: string
-  gender: 'M' | 'F' | 'Otro'
+  /** Obligatorio salvo en alta rápida desde agenda (is_first_visit=true). */
+  date_of_birth?: string | null
+  /** Obligatorio salvo en alta rápida desde agenda (is_first_visit=true). */
+  gender?: 'M' | 'F' | 'Otro' | null
   curp?: string | null
   rfc?: string | null
   email?: string | null
@@ -45,6 +47,24 @@ export interface PatientFormPayload {
   referred_by?: string | null
   notes?: string | null
   active?: boolean
+  /** Marca al paciente como "primera vez" sin expediente completo. */
+  is_first_visit?: boolean
+}
+
+export interface QuickPatientPayload {
+  first_name: string
+  last_name: string
+  mobile_phone?: string | null
+  phone?: string | null
+  notes?: string | null
+}
+
+export async function createQuickPatient(payload: QuickPatientPayload): Promise<Patient> {
+  const { data } = await api.post<ApiEnvelope<Patient>>('/api/patients', {
+    ...payload,
+    is_first_visit: true,
+  })
+  return data.data
 }
 
 export async function createPatient(payload: PatientFormPayload): Promise<Patient> {
@@ -59,6 +79,32 @@ export async function updatePatient(id: number, payload: Partial<PatientFormPayl
 
 export async function deletePatient(id: number): Promise<void> {
   await api.delete(`/api/patients/${id}`)
+}
+
+/** Categorías de registros que pueden bloquear la eliminación de un paciente. */
+export type PatientBlockerKey =
+  | 'appointments'
+  | 'charges'
+  | 'quotes'
+  | 'prescriptions'
+  | 'consents'
+  | 'memberships'
+  | 'lab_orders'
+  | 'recalls'
+  | 'tooth_states'
+  | 'dental_treatment_logs'
+  | 'endodontic_records'
+
+export interface PatientDeletePreview {
+  can_delete: boolean
+  blockers: Partial<Record<PatientBlockerKey, number>>
+}
+
+export async function getPatientDeletePreview(id: number): Promise<PatientDeletePreview> {
+  const { data } = await api.get<ApiEnvelope<PatientDeletePreview>>(
+    `/api/patients/${id}/delete-preview`,
+  )
+  return data.data
 }
 
 export async function getMedicalHistory(patientId: number): Promise<MedicalHistory> {

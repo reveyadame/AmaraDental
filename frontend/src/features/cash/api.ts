@@ -7,6 +7,7 @@ import type {
   Charge,
   ExpenseCategory,
   PaginatedResponse,
+  PatientCreditMovement,
   PaymentMethod,
 } from '@/shared/types/cash'
 
@@ -26,6 +27,7 @@ export async function openSession(opening_amount: number, notes?: string): Promi
 export interface CloseSessionPayload {
   closing_amount: number
   card_counted?: number
+  card_credit_counted?: number
   transfer_counted?: number
   close_notes?: string
 }
@@ -78,8 +80,10 @@ export interface PatientAccount {
     discounts: number
     charges_count: number
     pending_count: number
+    credit_balance: number
   }
   charges: Charge[]
+  credit_movements: PatientCreditMovement[]
 }
 
 export async function getPatientAccount(patientId: number): Promise<PatientAccount> {
@@ -125,6 +129,8 @@ export interface ChargeCreatePayload {
   notes?: string | null
   items: ChargeItemPayload[]
   payments?: ChargePaymentPayload[]
+  /** Excedente del cobro que se registra como saldo a favor del paciente. */
+  overpayment_credit_amount?: number
 }
 
 export async function createCharge(payload: ChargeCreatePayload): Promise<Charge> {
@@ -134,7 +140,7 @@ export async function createCharge(payload: ChargeCreatePayload): Promise<Charge
 
 export async function addPayment(
   chargeId: number,
-  payload: ChargePaymentPayload,
+  payload: ChargePaymentPayload & { overpayment_credit_amount?: number },
 ): Promise<Charge> {
   const { data } = await api.post<ApiEnvelope<Charge>>(
     `/api/charges/${chargeId}/payments`,
@@ -205,7 +211,7 @@ export interface CashMovementsFilters {
   date_from?: string
   date_to?: string
   type?: 'all' | 'payment' | 'expense'
-  method?: 'cash' | 'card' | 'transfer'
+  method?: PaymentMethod
   q?: string
   page?: number
   per_page?: number

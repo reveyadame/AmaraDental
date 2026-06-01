@@ -1,6 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Plus, Search, UserRound, Users } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Search,
+  Sparkles,
+  UserRound,
+  Users,
+} from 'lucide-react'
 import { usePatients } from './hooks'
 import { PatientFormDialog } from './PatientFormDialog'
 import { Button } from '@/shared/ui/button'
@@ -119,11 +127,22 @@ export function PatientsListPage() {
                         {p.last_name[0]}
                       </span>
                       <span>
-                        <span className="block text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                        <span className="block text-sm font-medium text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
                           {p.full_name}
+                          {p.is_first_visit ? (
+                            <Badge className="bg-lime-100 text-lime-900 border border-lime-200 hover:bg-lime-100 gap-1 text-[10px] px-1.5">
+                              <Sparkles className="size-2.5" /> 1ra vez
+                            </Badge>
+                          ) : null}
                         </span>
                         <span className="block text-xs text-muted-foreground">
-                          {p.gender === 'F' ? 'Femenino' : p.gender === 'M' ? 'Masculino' : 'Otro'}
+                          {p.gender === 'F'
+                            ? 'Femenino'
+                            : p.gender === 'M'
+                              ? 'Masculino'
+                              : p.is_first_visit
+                                ? 'Expediente pendiente'
+                                : 'Otro'}
                           {p.curp ? ` · CURP ${p.curp}` : ''}
                         </span>
                       </span>

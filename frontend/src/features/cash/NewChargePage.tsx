@@ -1,8 +1,18 @@
-import { useMemo, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Plus, ReceiptText, Sparkles, Trash2, X } from 'lucide-react'
-import { useCreateCharge, useCurrentCashSession } from './hooks'
+import {
+  ArrowLeft,
+  Loader2,
+  Plus,
+  ReceiptText,
+  Sparkles,
+  Trash2,
+  Wallet,
+  X,
+} from 'lucide-react'
+import { useCreateCharge, useCurrentCashSession, usePatientAccount } from './hooks'
+import { useConfirm } from '@/shared/ui/confirm'
 import { openChargeTicket } from './openChargeTicket'
 import { useBranding } from '@/shared/theme/ThemeProvider'
 import { PatientPicker } from './PatientPicker'
@@ -10,6 +20,7 @@ import { useTreatments } from '@/features/treatments/hooks'
 import { useDiscounts } from '@/features/discounts/hooks'
 import { useSpecialists } from '@/features/specialists/hooks'
 import { useMe } from '@/features/auth/hooks'
+import { usePatient } from '@/features/patients/hooks'
 import { useCurrentPatientMembership } from '@/features/memberships/hooks'
 import type { Patient } from '@/shared/types/patient'
 import type { PaymentMethod } from '@/shared/types/cash'
@@ -70,6 +81,7 @@ function newPayment(suggestedAmount = 0): PaymentDraft {
 
 export function NewChargePage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { data: me } = useMe()
   const session = useCurrentCashSession()
   const treatments = useTreatments({ only_active: true })
@@ -80,12 +92,28 @@ export function NewChargePage() {
 
   const canOperate = me?.permissions.includes('charges.create') ?? false
 
+  // Prellenado opcional vía ?patient_id=X (usado desde el tab "Estado de
+  // cuenta" en la ficha del paciente).
+  const presetPatientId = searchParams.get('patient_id')
+    ? Number(searchParams.get('patient_id'))
+    : undefined
+  const presetPatient = usePatient(presetPatientId)
+
+  const confirm = useConfirm()
   const [patient, setPatient] = useState<Patient | null>(null)
   const membership = useCurrentPatientMembership(patient?.id)
+  const account = usePatientAccount(patient?.id)
   const [editPatient, setEditPatient] = useState(false)
   const [items, setItems] = useState<ItemDraft[]>([newItem()])
   const [payments, setPayments] = useState<PaymentDraft[]>([])
   const [notes, setNotes] = useState('')
+
+  const availableCredit = account.data?.totals.credit_balance ?? 0
+
+  useEffect(() => {
+    if (!presetPatient.data || patient) return
+    setPatient(presetPatient.data)
+  }, [presetPatient.data, patient])
 
   if (!canOperate) return <Navigate to="/caja" replace />
 
@@ -249,12 +277,17 @@ export function NewChargePage() {
     }
     const total = subtotal - discount
     const paid = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)
+    const creditApplied = payments
+      .filter((p) => p.method === 'credit')
+      .reduce((s, p) => s + (Number(p.amount) || 0), 0)
     return {
       subtotal: +subtotal.toFixed(2),
       discount: +discount.toFixed(2),
       total: +total.toFixed(2),
       paid: +paid.toFixed(2),
       balance: +(total - paid).toFixed(2),
+      overpayment: +Math.max(0, paid - total).toFixed(2),
+      creditApplied: +creditApplied.toFixed(2),
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, payments, lineResults])
@@ -273,17 +306,46 @@ export function NewChargePage() {
     if (!patient) return 'Selecciona un paciente'
     const filledItems = items.filter((it) => it.treatment_id)
     if (filledItems.length === 0) return 'Agrega al menos un tratamiento'
-    if (totals.paid > totals.total + 0.001) return 'Los pagos exceden el total a cobrar'
+    // Especialista obligatorio en cada línea — queremos registrar quién atendió.
+    const missingSpecialist = filledItems.find((it) => !it.specialist_id)
+    if (missingSpecialist)
+      return 'Asigna un especialista a cada tratamiento'
+    // Usar más saldo a favor del que el paciente tiene disponible.
+    if (totals.creditApplied > availableCredit + 0.001) {
+      return `El saldo a favor aplicado excede el disponible (${formatMXN(availableCredit)})`
+    }
     return null
   }
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const err = validate()
     if (err) {
       toast.error(err)
       return
     }
+
+    // Si hay sobrepago, pedir confirmación para registrarlo como saldo a favor.
+    if (totals.overpayment > 0.001) {
+      const ok = await confirm({
+        title: '¿Registrar excedente como saldo a favor?',
+        description: (
+          <span>
+            Los pagos suman <strong>{formatMXN(totals.paid)}</strong> y el total
+            del cobro es <strong>{formatMXN(totals.total)}</strong>. El
+            excedente de{' '}
+            <strong className="text-emerald-700">
+              {formatMXN(totals.overpayment)}
+            </strong>{' '}
+            se acreditará a la cuenta del paciente como saldo a favor.
+          </span>
+        ),
+        confirmText: 'Sí, registrar saldo a favor',
+        cancelText: 'Volver',
+      })
+      if (!ok) return
+    }
+
     create.mutate(
       {
         patient_id: patient!.id,
@@ -357,6 +419,8 @@ export function NewChargePage() {
             amount: Number(p.amount),
             reference: p.reference || null,
           })),
+        overpayment_credit_amount:
+          totals.overpayment > 0 ? totals.overpayment : undefined,
       },
       {
         onSuccess: (c) => {
@@ -474,6 +538,56 @@ export function NewChargePage() {
                 </div>
               </div>
             ) : null}
+
+            {patient && availableCredit > 0 ? (
+              <div className="mt-3 rounded-md border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20 p-3 text-xs flex items-start gap-2">
+                <Wallet className="size-4 text-emerald-700 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">
+                    Saldo a favor disponible:{' '}
+                    <span className="text-emerald-700 tabular-nums">
+                      {formatMXN(availableCredit)}
+                    </span>
+                  </p>
+                  <p className="text-muted-foreground">
+                    Se puede aplicar como medio de pago en este cobro.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+                  disabled={
+                    !session.data ||
+                    totals.creditApplied >= availableCredit - 0.001 ||
+                    totals.total <= 0
+                  }
+                  onClick={() => {
+                    const remainingTotal = +Math.max(
+                      0,
+                      totals.total - totals.paid,
+                    ).toFixed(2)
+                    const maxApplicable = +Math.min(
+                      availableCredit - totals.creditApplied,
+                      remainingTotal,
+                    ).toFixed(2)
+                    if (maxApplicable <= 0) return
+                    setPayments((p) => [
+                      ...p,
+                      {
+                        uid: Math.random().toString(36).slice(2, 11),
+                        method: 'credit',
+                        amount: String(maxApplicable),
+                        reference: '',
+                      },
+                    ])
+                  }}
+                >
+                  Aplicar al cobro
+                </Button>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -540,18 +654,17 @@ export function NewChargePage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Especialista</Label>
+                      <Label className="text-xs">
+                        Especialista <span className="text-destructive">*</span>
+                      </Label>
                       <Select
-                        value={it.specialist_id || 'none'}
-                        onValueChange={(v) =>
-                          updateItem(it.uid, { specialist_id: v === 'none' ? '' : v })
-                        }
+                        value={it.specialist_id}
+                        onValueChange={(v) => updateItem(it.uid, { specialist_id: v })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Sin asignar" />
+                          <SelectValue placeholder="Selecciona…" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">Sin asignar</SelectItem>
                           {specialists.data?.map((s) => (
                             <SelectItem key={s.id} value={String(s.id)}>
                               {s.name}
@@ -726,8 +839,14 @@ export function NewChargePage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="cash">Efectivo</SelectItem>
-                          <SelectItem value="card">Tarjeta</SelectItem>
+                          <SelectItem value="card">Tarjeta de débito</SelectItem>
+                          <SelectItem value="card_credit">Tarjeta de crédito</SelectItem>
                           <SelectItem value="transfer">Transferencia</SelectItem>
+                          {availableCredit > 0 ? (
+                            <SelectItem value="credit">
+                              Saldo a favor (disp. {formatMXN(availableCredit)})
+                            </SelectItem>
+                          ) : null}
                         </SelectContent>
                       </Select>
                     </div>
@@ -814,9 +933,23 @@ export function NewChargePage() {
             className="sm:min-w-56"
           >
             {create.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-            {totals.total === 0
-              ? 'Registrar (cubierto por membresía)'
-              : `Registrar cobro · ${formatMXN(totals.total)}`}
+            {(() => {
+              // "Cubierto por membresía" SOLO si el total es 0 Y al menos una
+              // línea aplicó descuento por membresía. Total 0 sin membresía
+              // (sin items o con descuento manual del 100%) es un cobro normal.
+              const coveredByMembership =
+                totals.total === 0 &&
+                items.some((it) => {
+                  const line = lineResults.get(it.uid)
+                  return (
+                    !!it.treatment_id &&
+                    line?.membershipPercent !== null &&
+                    (line?.coveredQty ?? 0) > 0
+                  )
+                })
+              if (coveredByMembership) return 'Registrar (cubierto por membresía)'
+              return `Registrar cobro · ${formatMXN(totals.total)}`
+            })()}
           </Button>
         </div>
       </form>

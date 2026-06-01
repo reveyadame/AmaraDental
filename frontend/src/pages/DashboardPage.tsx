@@ -513,7 +513,7 @@ export function DashboardPage() {
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                     Cobros del turno
                   </p>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                     <div>
                       <p className="text-muted-foreground flex items-center gap-1">
                         <Banknote className="size-3" /> Efectivo
@@ -526,11 +526,21 @@ export function DashboardPage() {
                     </div>
                     <div>
                       <p className="text-muted-foreground flex items-center gap-1">
-                        <CreditCard className="size-3" /> Tarjeta
+                        <CreditCard className="size-3" /> Débito
                       </p>
                       <p className="tabular-nums font-medium">
                         {formatMXN(
                           d.cash_session.payments_by_method?.card ?? 0,
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground flex items-center gap-1">
+                        <CreditCard className="size-3" /> Crédito
+                      </p>
+                      <p className="tabular-nums font-medium">
+                        {formatMXN(
+                          d.cash_session.payments_by_method?.card_credit ?? 0,
                         )}
                       </p>
                     </div>
@@ -862,7 +872,8 @@ export function DashboardPage() {
                       {formatMXN(d.payments_by_method_today.cash)}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      Tarjeta {formatMXN(d.payments_by_method_today.card)} ·
+                      Déb {formatMXN(d.payments_by_method_today.card)} ·
+                      Créd {formatMXN(d.payments_by_method_today.card_credit)} ·
                       Transf {formatMXN(d.payments_by_method_today.transfer)}
                     </p>
                   </div>

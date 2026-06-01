@@ -2,11 +2,13 @@ import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tansta
 import {
   createConsent,
   createPatient,
+  createQuickPatient,
   deleteConsent,
   deletePatient,
   getConsent,
   getMedicalHistory,
   getPatient,
+  getPatientDeletePreview,
   listConsentTemplates,
   listConsents,
   listPatients,
@@ -15,6 +17,7 @@ import {
   type ConsentCreatePayload,
   type PatientFormPayload,
   type PatientListQuery,
+  type QuickPatientPayload,
 } from './api'
 import type { MedicalHistory } from '@/shared/types/patient'
 
@@ -49,6 +52,15 @@ export function useCreatePatient() {
   })
 }
 
+/** Alta rápida desde agenda con solo nombre + teléfono. */
+export function useCreateQuickPatient() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: QuickPatientPayload) => createQuickPatient(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['patients'] }),
+  })
+}
+
 export function useUpdatePatient(id: number) {
   const qc = useQueryClient()
   return useMutation({
@@ -65,6 +77,22 @@ export function useDeletePatient() {
   return useMutation({
     mutationFn: (id: number) => deletePatient(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['patients'] }),
+  })
+}
+
+/**
+ * Pre-check de eliminación: lista de tablas con registros que bloquean.
+ * Solo el admin tiene autorización en el backend; para otros usuarios
+ * el endpoint devuelve 403 y el query queda en error.
+ */
+export function usePatientDeletePreview(id: number | undefined, enabled = true) {
+  return useQuery({
+    queryKey: id
+      ? (['patients', id, 'delete-preview'] as const)
+      : (['patients', 'none', 'delete-preview'] as const),
+    queryFn: () => getPatientDeletePreview(id as number),
+    enabled: !!id && enabled,
+    staleTime: 10_000,
   })
 }
 

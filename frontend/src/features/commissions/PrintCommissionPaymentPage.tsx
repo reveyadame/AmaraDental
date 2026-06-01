@@ -8,8 +8,10 @@ import type { PaymentMethod } from '@/shared/types/cash'
 
 const METHOD_LABEL: Record<PaymentMethod, string> = {
   cash: 'Efectivo',
-  card: 'Tarjeta',
+  card: 'Tarjeta de débito',
+  card_credit: 'Tarjeta de crédito',
   transfer: 'Transferencia',
+  credit: 'Saldo a favor',
 }
 
 function formatDateTime(iso: string | null): string {

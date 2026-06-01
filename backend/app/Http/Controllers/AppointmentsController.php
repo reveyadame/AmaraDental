@@ -9,12 +9,22 @@ use App\Http\Requests\Appointments\StoreAppointmentRequest;
 use App\Http\Requests\Appointments\UpdateAppointmentRequest;
 use App\Http\Resources\AppointmentResource;
 use App\Models\Appointment;
+use App\Models\Charge;
+use App\Models\Consent;
+use App\Models\DentalTreatmentLog;
+use App\Models\EndodonticRecord;
+use App\Models\LabOrder;
+use App\Models\Membership;
+use App\Models\Prescription;
+use App\Models\Quote;
+use App\Models\ToothState;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class AppointmentsController extends Controller implements HasMiddleware
@@ -105,5 +115,79 @@ class AppointmentsController extends Controller implements HasMiddleware
         $appointment->delete();
 
         return response()->json(['message' => 'OK']);
+    }
+
+    /**
+     * Marca la cita como `no_show` y, si el paciente fue capturado como
+     * "primera vez" y no tiene otros registros (cobros, recetas, etc.),
+     * elimina el paciente — la cita se borra en cascada con él.
+     *
+     * Solo aplica a `is_first_visit=true`. Para pacientes formales, hay que
+     * marcar el no_show por la vía normal y, si se quiere eliminar, debe
+     * hacerlo un admin desde la ficha del paciente.
+     */
+    public function markNoShowAndDiscardPatient(Appointment $appointment): JsonResponse
+    {
+        $this->authorize('changeStatus', $appointment);
+
+        $appointment->load('patient');
+        $patient = $appointment->patient;
+
+        abort_if(! $patient, 422, 'La cita no tiene paciente asociado.');
+        abort_if(! $patient->is_first_visit, 422,
+            'Esta acción solo aplica a pacientes capturados como "primera vez".');
+
+        // Autorización adicional: el usuario debe poder eliminar al paciente
+        // (policy ya permite a operadores de agenda eliminar is_first_visit).
+        $this->authorize('delete', $patient);
+
+        $pid = $patient->id;
+        $blockers = [
+            'charges' => Charge::query()->where('patient_id', $pid)->count(),
+            'quotes' => Quote::query()->where('patient_id', $pid)->count(),
+            'prescriptions' => Prescription::query()->where('patient_id', $pid)->count(),
+            'consents' => Consent::query()->where('patient_id', $pid)->count(),
+            'memberships' => Membership::query()->where('patient_id', $pid)->count(),
+            'lab_orders' => LabOrder::query()->where('patient_id', $pid)->count(),
+            'tooth_states' => ToothState::query()->where('patient_id', $pid)->count(),
+            'dental_treatment_logs' => DentalTreatmentLog::query()->where('patient_id', $pid)->count(),
+            'endodontic_records' => EndodonticRecord::query()->where('patient_id', $pid)->count(),
+        ];
+        $nonEmpty = array_filter($blockers, fn ($n) => $n > 0);
+
+        return DB::transaction(function () use ($appointment, $patient, $nonEmpty) {
+            // Siempre dejamos la cita en `no_show` — el operador la marcó así.
+            $appointment->update(['status' => AppointmentStatus::NoShow->value]);
+
+            if (! empty($nonEmpty)) {
+                // No podemos descartar al paciente: ya tiene huella. Solo
+                // devolvemos la cita marcada y los bloqueadores para el UI.
+                $appointment->refresh()->load(['patient', 'specialist', 'treatment']);
+
+                return response()->json([
+                    'data' => [
+                        'patient_deleted' => false,
+                        'patient_name' => $patient->full_name,
+                        'blockers' => $nonEmpty,
+                        'appointment' => AppointmentResource::make($appointment),
+                    ],
+                ]);
+            }
+
+            $patientName = $patient->full_name;
+            // cascadeOnDelete en `appointments.patient_id` elimina TODAS sus
+            // citas (incluida la actual). Es lo esperado para un paciente
+            // fantasma de primera vez.
+            $patient->delete();
+
+            return response()->json([
+                'data' => [
+                    'patient_deleted' => true,
+                    'patient_name' => $patientName,
+                    'blockers' => [],
+                    'appointment' => null,
+                ],
+            ]);
+        });
     }
 }

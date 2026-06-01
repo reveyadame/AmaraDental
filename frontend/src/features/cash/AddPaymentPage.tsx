@@ -1,10 +1,23 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, Banknote, CreditCard as CardIcon, Landmark, Loader2 } from 'lucide-react'
-import { useAddPayment, useCharge, useCurrentCashSession } from './hooks'
+import {
+  ArrowLeft,
+  Banknote,
+  CreditCard as CardIcon,
+  Landmark,
+  Loader2,
+  Wallet,
+} from 'lucide-react'
+import {
+  useAddPayment,
+  useCharge,
+  useCurrentCashSession,
+  usePatientAccount,
+} from './hooks'
 import { openChargeTicket } from './openChargeTicket'
 import { useBranding } from '@/shared/theme/ThemeProvider'
+import { useConfirm } from '@/shared/ui/confirm'
 import type { PaymentMethod } from '@/shared/types/cash'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -18,8 +31,10 @@ import { cn, formatMXN } from '@/shared/lib/utils'
 
 const METHODS: { value: PaymentMethod; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { value: 'cash', label: 'Efectivo', icon: Banknote },
-  { value: 'card', label: 'Tarjeta', icon: CardIcon },
+  { value: 'card', label: 'Débito', icon: CardIcon },
+  { value: 'card_credit', label: 'Crédito', icon: CardIcon },
   { value: 'transfer', label: 'Transferencia', icon: Landmark },
+  { value: 'credit', label: 'Saldo a favor', icon: Wallet },
 ]
 
 const QUICK_AMOUNTS = [100, 200, 500, 1000] as const
@@ -37,6 +52,9 @@ export function AddPaymentPage() {
   const session = useCurrentCashSession()
   const mutation = useAddPayment(id ?? 0)
   const { branding } = useBranding()
+  const confirm = useConfirm()
+  const account = usePatientAccount(charge.data?.patient_id)
+  const availableCredit = account.data?.totals.credit_balance ?? 0
 
   const [method, setMethod] = useState<PaymentMethod>('cash')
   const [amount, setAmount] = useState('')
@@ -55,22 +73,46 @@ export function AddPaymentPage() {
   const balance = charge.data?.balance ?? 0
   const value = Number(amount) || 0
   const remaining = +(balance - value).toFixed(2)
-  const exceeds = value > balance + 0.001
+  const overpayment = +Math.max(0, value - balance).toFixed(2)
   const isPaid = charge.data?.status === 'paid'
   const isCancelled = charge.data?.status === 'cancelled'
   const blocked = !session.data || isPaid || isCancelled
+  const exceedsCredit =
+    method === 'credit' && value > availableCredit + 0.001
 
-  const setAmountTo = (n: number) => setAmount(String(Math.min(n, balance)))
+  const setAmountTo = (n: number) => setAmount(String(n))
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (value <= 0) {
       toast.error('Monto inválido')
       return
     }
-    if (exceeds) {
-      toast.error('El monto excede el saldo pendiente')
+    if (exceedsCredit) {
+      toast.error(
+        `El saldo a favor disponible es ${formatMXN(availableCredit)}`,
+      )
       return
+    }
+    // Si el monto excede el saldo pendiente, pedir confirmación para
+    // registrar el excedente como saldo a favor del paciente.
+    if (overpayment > 0.001) {
+      const ok = await confirm({
+        title: '¿Registrar excedente como saldo a favor?',
+        description: (
+          <span>
+            El pago de <strong>{formatMXN(value)}</strong> excede en{' '}
+            <strong className="text-emerald-700">
+              {formatMXN(overpayment)}
+            </strong>{' '}
+            el saldo pendiente. El excedente se acreditará a la cuenta del
+            paciente.
+          </span>
+        ),
+        confirmText: 'Sí, registrar saldo a favor',
+        cancelText: 'Volver',
+      })
+      if (!ok) return
     }
     mutation.mutate(
       {
@@ -78,6 +120,7 @@ export function AddPaymentPage() {
         amount: value,
         reference: reference || null,
         notes: notes || null,
+        overpayment_credit_amount: overpayment > 0 ? overpayment : undefined,
       },
       {
         onSuccess: (c) => {
@@ -205,20 +248,32 @@ export function AddPaymentPage() {
                 <CardContent className="p-5 space-y-5">
                   <div className="space-y-2">
                     <Label>Método de pago</Label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                       {METHODS.map((m) => {
                         const Icon = m.icon
                         const active = method === m.value
+                        const disabled =
+                          m.value === 'credit' && availableCredit <= 0
                         return (
                           <button
                             key={m.value}
                             type="button"
-                            onClick={() => setMethod(m.value)}
+                            disabled={disabled}
+                            onClick={() => {
+                              setMethod(m.value)
+                              // Si el método es credit, sugerir el menor entre
+                              // saldo disponible y saldo pendiente.
+                              if (m.value === 'credit') {
+                                const max = Math.min(availableCredit, balance)
+                                if (max > 0) setAmount(String(max.toFixed(2)))
+                              }
+                            }}
                             className={cn(
                               'flex flex-col items-center justify-center gap-1.5 rounded-md border p-3 text-sm transition-colors',
                               active
                                 ? 'border-primary bg-primary/10 text-primary'
                                 : 'hover:bg-accent text-muted-foreground',
+                              disabled && 'opacity-40 cursor-not-allowed hover:bg-transparent',
                             )}
                           >
                             <Icon className="size-5" />
@@ -245,7 +300,6 @@ export function AddPaymentPage() {
                       type="number"
                       step="0.01"
                       min={0}
-                      max={balance}
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       className="text-2xl font-semibold h-14 tabular-nums"
@@ -264,9 +318,20 @@ export function AddPaymentPage() {
                         ) : null,
                       )}
                     </div>
-                    {exceeds ? (
+                    {method === 'credit' && availableCredit > 0 ? (
+                      <p className="text-xs text-emerald-700">
+                        Saldo a favor disponible: {formatMXN(availableCredit)}
+                      </p>
+                    ) : null}
+                    {exceedsCredit ? (
                       <p className="text-xs text-destructive">
-                        El monto excede el saldo pendiente.
+                        Excede el saldo a favor disponible.
+                      </p>
+                    ) : null}
+                    {overpayment > 0 ? (
+                      <p className="text-xs text-emerald-700">
+                        Excedente de {formatMXN(overpayment)} se registrará como
+                        saldo a favor del paciente.
                       </p>
                     ) : null}
                     <p className="text-xs text-muted-foreground tabular-nums">
@@ -319,7 +384,10 @@ export function AddPaymentPage() {
                 <Button type="button" variant="outline" onClick={() => navigate('/caja')}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={mutation.isPending || exceeds || value <= 0}>
+                <Button
+                  type="submit"
+                  disabled={mutation.isPending || exceedsCredit || value <= 0}
+                >
                   {mutation.isPending ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : null}

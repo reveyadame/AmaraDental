@@ -16,8 +16,10 @@ import { cn, formatMXN } from '@/shared/lib/utils'
 
 const METHOD_LABEL: Record<PaymentMethod, string> = {
   cash: 'Efectivo',
-  card: 'Tarjeta',
+  card: 'Tarjeta de débito',
+  card_credit: 'Tarjeta de crédito',
   transfer: 'Transferencia',
+  credit: 'Saldo a favor',
 }
 
 function formatTime(iso: string | null): string {

@@ -51,6 +51,12 @@ export const MODULE_ACCENTS: Record<string, ModuleAccent> = {
     border: 'border-emerald-500',
     soft: 'bg-emerald-50 dark:bg-emerald-950/20',
   },
+  quotes: {
+    badge: 'bg-lime-100 text-lime-800 dark:bg-lime-950/40 dark:text-lime-300',
+    text: 'text-lime-800 dark:text-lime-300',
+    border: 'border-lime-500',
+    soft: 'bg-lime-50 dark:bg-lime-950/20',
+  },
   prescriptions: {
     badge: 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
     text: 'text-rose-700 dark:text-rose-300',

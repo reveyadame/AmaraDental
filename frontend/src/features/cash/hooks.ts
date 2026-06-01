@@ -99,9 +99,10 @@ export function useCreateCharge() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: ChargeCreatePayload) => createCharge(payload),
-    onSuccess: () => {
+    onSuccess: (c) => {
       qc.invalidateQueries({ queryKey: ['charges'] })
       qc.invalidateQueries({ queryKey: sessionKey })
+      qc.invalidateQueries({ queryKey: ['patients', c.patient_id, 'account'] })
     },
   })
 }
@@ -109,11 +110,13 @@ export function useCreateCharge() {
 export function useAddPayment(chargeId: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (p: ChargePaymentPayload) => addPayment(chargeId, p),
+    mutationFn: (p: ChargePaymentPayload & { overpayment_credit_amount?: number }) =>
+      addPayment(chargeId, p),
     onSuccess: (c) => {
       qc.setQueryData(chargeKey(chargeId), c)
       qc.invalidateQueries({ queryKey: ['charges'] })
       qc.invalidateQueries({ queryKey: sessionKey })
+      qc.invalidateQueries({ queryKey: ['patients', c.patient_id, 'account'] })
     },
   })
 }
@@ -125,6 +128,9 @@ export function useCancelCharge(chargeId: number) {
     onSuccess: (c) => {
       qc.setQueryData(chargeKey(chargeId), c)
       qc.invalidateQueries({ queryKey: ['charges'] })
+      // Invalidar el estado de cuenta del paciente para que se refresque
+      // automáticamente tras cancelar (fix del bug de no actualización).
+      qc.invalidateQueries({ queryKey: ['patients', c.patient_id, 'account'] })
     },
   })
 }

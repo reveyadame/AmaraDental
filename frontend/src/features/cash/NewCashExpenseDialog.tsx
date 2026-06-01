@@ -33,9 +33,12 @@ interface Props {
   onOpenChange: (open: boolean) => void
 }
 
-const METHODS: { value: PaymentMethod; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+// Egresos NO usan `credit` (saldo a favor del paciente) — solo medios de
+// pago reales.
+const METHODS: { value: 'cash' | 'card' | 'card_credit' | 'transfer'; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { value: 'cash', label: 'Efectivo', icon: Banknote },
-  { value: 'card', label: 'Tarjeta', icon: CardIcon },
+  { value: 'card', label: 'Débito', icon: CardIcon },
+  { value: 'card_credit', label: 'Crédito', icon: CardIcon },
   { value: 'transfer', label: 'Transferencia', icon: Landmark },
 ]
 
@@ -140,7 +143,7 @@ export function NewCashExpenseDialog({ open, onOpenChange }: Props) {
 
           <div className="space-y-1.5">
             <Label>Método de pago</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {METHODS.map((m) => {
                 const Icon = m.icon
                 return (

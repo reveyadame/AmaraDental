@@ -32,6 +32,10 @@ import { UsersPage } from '@/pages/UsersPage'
 import { CommissionsPage } from '@/pages/CommissionsPage'
 import { PrintCommissionPaymentPage } from '@/features/commissions/PrintCommissionPaymentPage'
 import { PrintCommissionTicketPage } from '@/features/commissions/PrintCommissionTicketPage'
+import { QuotesPage } from '@/pages/QuotesPage'
+import { QuoteFormPage } from '@/features/quotes/QuoteFormPage'
+import { QuoteDetailPage } from '@/features/quotes/QuoteDetailPage'
+import { PrintQuotePage } from '@/features/quotes/PrintQuotePage'
 import { ProtectedRoute } from './ProtectedRoute'
 import { AppShell } from './AppShell'
 
@@ -126,6 +130,28 @@ export function Router() {
         }
       />
       <Route path="/caja/cobros/:id/pagar" element={<Shell><AddPaymentPage /></Shell>} />
+
+      <Route path="/cotizaciones" element={<Shell><QuotesPage /></Shell>} />
+      <Route
+        path="/cotizaciones/nueva"
+        element={<Shell><QuoteFormPage mode="create" /></Shell>}
+      />
+      <Route
+        path="/cotizaciones/:id"
+        element={<Shell><QuoteDetailPage /></Shell>}
+      />
+      <Route
+        path="/cotizaciones/:id/editar"
+        element={<Shell><QuoteFormPage mode="edit" /></Shell>}
+      />
+      <Route
+        path="/cotizaciones/:id/imprimir"
+        element={
+          <ProtectedRoute>
+            <PrintQuotePage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/caja/cobros/:id/ticket"
         element={

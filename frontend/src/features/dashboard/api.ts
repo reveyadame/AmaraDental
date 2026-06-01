@@ -57,7 +57,12 @@ export interface DashboardCashSession {
 export interface DashboardSummary {
   kpis: DashboardKpis
   revenue_series: DashboardRevenuePoint[]
-  payments_by_method_today: { cash: number; card: number; transfer: number }
+  payments_by_method_today: {
+    cash: number
+    card: number
+    card_credit: number
+    transfer: number
+  }
   upcoming_appointments: DashboardUpcomingAppointment[]
   urgent_recalls: DashboardUrgentRecall[]
   top_pending_balances: DashboardTopPending[]

@@ -8,6 +8,8 @@ use App\Enums\Role;
 use App\Models\ChargeItem;
 use App\Models\ChargePayment;
 use App\Models\CommissionPayment;
+use App\Models\PatientCredit;
+use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -77,7 +79,7 @@ class ChargePaymentsController extends Controller implements HasMiddleware
             ], 409);
         }
 
-        DB::transaction(function () use ($payment, $items, $commissionPayments): void {
+        DB::transaction(function () use ($payment, $items, $commissionPayments, $request): void {
             // 1. Si admin confirmó, liberar items y eliminar commission_payments
             //    (con sus cash_expense asociados si los hay).
             foreach ($commissionPayments as $cp) {
@@ -91,7 +93,21 @@ class ChargePaymentsController extends Controller implements HasMiddleware
                 $cp->delete();
             }
 
-            // 2. Eliminar el pago y recomputar el cobro.
+            // 2. Si el pago fue con saldo a favor, regresar ese saldo al
+            //    paciente registrando un movimiento contrario.
+            if ($payment->method === 'credit') {
+                PatientCredit::query()->create([
+                    'tenant_id' => TenantContext::tenantId(),
+                    'patient_id' => $payment->charge?->patient_id,
+                    'amount' => (float) $payment->amount,
+                    'source' => 'refund_application',
+                    'charge_id' => $payment->charge_id,
+                    'notes' => 'Reverso por eliminación de pago con saldo a favor',
+                    'created_by_user_id' => $request->user()->id,
+                ]);
+            }
+
+            // 3. Eliminar el pago y recomputar el cobro.
             $charge = $payment->charge;
             $payment->delete();
             if ($charge) {

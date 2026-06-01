@@ -9,6 +9,7 @@ import {
   getIcsFeedToken,
   listAgendaBlocks,
   listAppointments,
+  markNoShowAndDiscardPatient,
   regenerateIcsFeedToken,
   updateAgendaBlock,
   updateAppointment,
@@ -81,6 +82,22 @@ export function useDeleteAppointment() {
   return useMutation({
     mutationFn: (id: number) => deleteAppointment(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['appointments'] }),
+  })
+}
+
+/**
+ * Marca la cita como no_show y descarta al paciente cuando es de
+ * "primera vez". Si el paciente acumuló registros entre tanto, solo
+ * deja la cita en no_show y devuelve los bloqueadores.
+ */
+export function useNoShowAndDiscardPatient() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => markNoShowAndDiscardPatient(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['appointments'] })
+      qc.invalidateQueries({ queryKey: ['patients'] })
+    },
   })
 }
 
