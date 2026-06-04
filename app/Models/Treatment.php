@@ -27,6 +27,8 @@ class Treatment extends Model implements Auditable
         'base_price',
         'duration_minutes',
         'commission_percent',
+        'commission_base',
+        'cost',
         'periodicity_days',
         'recall_label',
         'requires_consent_template_id',
@@ -38,6 +40,7 @@ class Treatment extends Model implements Auditable
         return [
             'base_price' => 'decimal:2',
             'commission_percent' => 'decimal:2',
+            'cost' => 'decimal:2',
             'duration_minutes' => 'integer',
             'periodicity_days' => 'integer',
             'active' => 'boolean',

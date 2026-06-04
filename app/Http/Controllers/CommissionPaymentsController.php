@@ -93,6 +93,11 @@ class CommissionPaymentsController extends Controller implements HasMiddleware
                         'treatment_name' => $i->treatment_name,
                         'line_total' => (float) $i->line_total,
                         'commission_percent' => (float) $i->commission_percent,
+                        'commission_base' => $i->commission_base ?? 'price',
+                        'commission_cost' => (float) $i->commission_cost,
+                        'commission_base_amount' => ($i->commission_base ?? 'price') === 'profit'
+                            ? round((float) $i->line_total - (float) $i->commission_cost * (int) $i->quantity, 2)
+                            : (float) $i->line_total,
                         'commission_amount' => (float) $i->commission_amount,
                         'commission_paid_share' => $commissionPaidShare,
                     ];

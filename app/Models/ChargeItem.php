@@ -30,6 +30,8 @@ class ChargeItem extends Model implements Auditable
         'discount_amount',
         'line_total',
         'commission_percent',
+        'commission_base',
+        'commission_cost',
         'commission_amount',
         'commission_payment_id',
     ];
@@ -42,6 +44,7 @@ class ChargeItem extends Model implements Auditable
             'discount_amount' => 'decimal:2',
             'line_total' => 'decimal:2',
             'commission_percent' => 'decimal:2',
+            'commission_cost' => 'decimal:2',
             'commission_amount' => 'decimal:2',
         ];
     }
