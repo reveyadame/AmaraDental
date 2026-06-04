@@ -275,8 +275,14 @@ class QuotesController extends Controller implements HasMiddleware
                 $commissionPercent = $treatment
                     ? CommissionResolver::resolve($specialist, $treatment)
                     : null;
+                $commissionBase = $treatment ? $treatment->commission_base : 'price';
+                $commissionCost = $treatment && $treatment->commission_base === 'profit'
+                    ? (float) $treatment->cost : 0;
+                $commissionBaseAmount = $treatment
+                    ? CommissionResolver::baseAmount($treatment, (float) $qi->line_total, (int) $qi->quantity)
+                    : (float) $qi->line_total;
                 $commissionAmount = $commissionPercent !== null
-                    ? round((float) $qi->line_total * ($commissionPercent / 100), 2)
+                    ? round($commissionBaseAmount * ($commissionPercent / 100), 2)
                     : 0;
 
                 $charge->items()->create([
@@ -292,6 +298,8 @@ class QuotesController extends Controller implements HasMiddleware
                     'discount_amount' => $qi->discount_amount,
                     'line_total' => $qi->line_total,
                     'commission_percent' => $commissionPercent,
+                    'commission_base' => $commissionBase,
+                    'commission_cost' => $commissionCost,
                     'commission_amount' => $commissionAmount,
                 ]);
             }

@@ -35,6 +35,8 @@ const schema = z.object({
   base_price: z.coerce.number().min(0, 'Debe ser ≥ 0'),
   duration_minutes: z.coerce.number().int().min(5).max(600),
   commission_percent: z.union([z.literal(''), z.coerce.number().min(0).max(100)]),
+  commission_base: z.enum(['price', 'profit']),
+  cost: z.coerce.number().min(0, 'Debe ser ≥ 0'),
   periodicity_days: z.union([z.literal(''), z.coerce.number().int().min(1).max(3650)]),
   recall_label: z.string().max(120),
 })
@@ -56,6 +58,8 @@ function defaults(): FormValues {
     base_price: 0,
     duration_minutes: 30,
     commission_percent: '',
+    commission_base: 'price',
+    cost: 0,
     periodicity_days: '',
     recall_label: '',
   }
@@ -70,6 +74,8 @@ function fromTreatment(t: Treatment): FormValues {
     base_price: t.base_price,
     duration_minutes: t.duration_minutes,
     commission_percent: t.commission_percent ?? '',
+    commission_base: t.commission_base ?? 'price',
+    cost: t.cost ?? 0,
     periodicity_days: t.periodicity_days ?? '',
     recall_label: t.recall_label ?? '',
   }
@@ -97,6 +103,7 @@ export function TreatmentFormDialog({ open, onOpenChange, treatment }: Props) {
   }, [treatment, reset])
 
   const category = watch('category')
+  const commissionBase = watch('commission_base')
 
   const onSubmit = (v: FormValues) => {
     const payload = {
@@ -107,6 +114,9 @@ export function TreatmentFormDialog({ open, onOpenChange, treatment }: Props) {
       base_price: v.base_price,
       duration_minutes: v.duration_minutes,
       commission_percent: v.commission_percent === '' ? null : v.commission_percent,
+      commission_base: v.commission_base,
+      // El costo solo aplica en modo utilidad; en modo precio se manda 0.
+      cost: v.commission_base === 'profit' ? v.cost : 0,
       periodicity_days: v.periodicity_days === '' ? null : v.periodicity_days,
       recall_label: v.recall_label || null,
     }
@@ -200,6 +210,32 @@ export function TreatmentFormDialog({ open, onOpenChange, treatment }: Props) {
                 {...register('commission_percent')}
               />
             </div>
+            <div className="space-y-1.5">
+              <Label>Base de comisión</Label>
+              <Select
+                value={commissionBase}
+                onValueChange={(v) => setValue('commission_base', v as 'price' | 'profit')}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="price">Sobre el precio cobrado</SelectItem>
+                  <SelectItem value="profit">Sobre la utilidad (precio − costo)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {commissionBase === 'profit' ? (
+              <div className="sm:col-span-2 space-y-1.5">
+                <Label htmlFor="cost">Costo de insumo (MXN)</Label>
+                <Input id="cost" type="number" step="0.01" {...register('cost')} />
+                <p className="text-xs text-muted-foreground">
+                  Se descuenta del precio antes de calcular la comisión. Ej. implante de $25,000
+                  con costo $5,000 comisiona sobre $20,000.
+                </p>
+                {errors.cost ? <p className="text-xs text-destructive">{errors.cost.message}</p> : null}
+              </div>
+            ) : null}
             <div className="space-y-1.5">
               <Label htmlFor="periodicity_days">Periodicidad (días)</Label>
               <Input

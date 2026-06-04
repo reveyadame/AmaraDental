@@ -443,8 +443,9 @@ class ChargesController extends Controller implements HasMiddleware
 
         $lineTotal = round($subtotal - $discountAmount, 2);
         $commissionPercent = CommissionResolver::resolve($specialist, $treatment);
+        $commissionBaseAmount = CommissionResolver::baseAmount($treatment, $lineTotal, $quantity);
         $commissionAmount = $commissionPercent !== null
-            ? round($lineTotal * ($commissionPercent / 100), 2) : 0;
+            ? round($commissionBaseAmount * ($commissionPercent / 100), 2) : 0;
 
         $charge->items()->create([
             'tenant_id' => $charge->tenant_id,
@@ -459,6 +460,8 @@ class ChargesController extends Controller implements HasMiddleware
             'discount_amount' => $discountAmount,
             'line_total' => $lineTotal,
             'commission_percent' => $commissionPercent,
+            'commission_base' => $treatment->commission_base,
+            'commission_cost' => $treatment->commission_base === 'profit' ? (float) $treatment->cost : 0,
             'commission_amount' => $commissionAmount,
         ]);
     }

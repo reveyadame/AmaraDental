@@ -33,4 +33,21 @@ final class CommissionResolver
                 ? (float) $specialist->default_commission_percent : null,
         );
     }
+
+    /**
+     * Base sobre la que se aplica el porcentaje de comisión.
+     *
+     * En modo 'price' es el `line_total` (comportamiento histórico). En modo
+     * 'profit' se descuenta el costo del insumo (`cost * quantity`) — ej. un
+     * implante de $25,000 con costo $5,000 comisiona sobre $20,000. Nunca
+     * regresa negativo: si el costo supera el cobrado, la base es 0.
+     */
+    public static function baseAmount(Treatment $treatment, float $lineTotal, int $quantity): float
+    {
+        if ($treatment->commission_base !== 'profit') {
+            return round($lineTotal, 2);
+        }
+
+        return max(round($lineTotal - (float) $treatment->cost * $quantity, 2), 0.0);
+    }
 }

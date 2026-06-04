@@ -38,6 +38,11 @@ class CommissionPaymentResource extends JsonResource
                     'treatment_name' => $i->treatment_name,
                     'patient_name' => $i->charge?->patient?->full_name,
                     'commission_amount' => (float) $i->commission_amount,
+                    'commission_base' => $i->commission_base ?? 'price',
+                    'commission_cost' => (float) $i->commission_cost,
+                    'commission_base_amount' => ($i->commission_base ?? 'price') === 'profit'
+                        ? round((float) $i->line_total - (float) $i->commission_cost * (int) $i->quantity, 2)
+                        : (float) $i->line_total,
                     'line_total' => (float) $i->line_total,
                     'charge_date' => $i->charge?->created_at?->toIso8601String(),
                 ]);

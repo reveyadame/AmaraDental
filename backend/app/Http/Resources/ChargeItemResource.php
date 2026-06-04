@@ -29,6 +29,8 @@ class ChargeItemResource extends JsonResource
             'line_total' => (float) $this->line_total,
             'commission_percent' => $this->commission_percent !== null
                 ? (float) $this->commission_percent : null,
+            'commission_base' => $this->commission_base ?? 'price',
+            'commission_cost' => (float) $this->commission_cost,
             'commission_amount' => (float) $this->commission_amount,
         ];
     }

@@ -7,6 +7,10 @@ export interface Treatment {
   base_price: number
   duration_minutes: number
   commission_percent: number | null
+  /** Base de cálculo de la comisión: sobre el precio cobrado o sobre la utilidad (precio − costo). */
+  commission_base: 'price' | 'profit'
+  /** Costo del insumo a descontar cuando `commission_base === 'profit'`. */
+  cost: number
   periodicity_days: number | null
   recall_label: string | null
   requires_consent_template_id: number | null

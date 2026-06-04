@@ -30,6 +30,8 @@ class StoreTreatmentRequest extends FormRequest
             'base_price' => ['required', 'numeric', 'min:0'],
             'duration_minutes' => ['required', 'integer', 'min:5', 'max:600'],
             'commission_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'commission_base' => ['sometimes', Rule::in(['price', 'profit'])],
+            'cost' => ['nullable', 'numeric', 'min:0'],
             'periodicity_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
             'recall_label' => ['nullable', 'string', 'max:120'],
             'requires_consent_template_id' => ['nullable', 'integer', 'exists:consent_templates,id'],

@@ -21,6 +21,8 @@ export interface TreatmentPayload {
   base_price: number
   duration_minutes: number
   commission_percent?: number | null
+  commission_base?: 'price' | 'profit'
+  cost?: number | null
   periodicity_days?: number | null
   recall_label?: string | null
   requires_consent_template_id?: number | null

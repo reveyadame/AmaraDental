@@ -25,6 +25,8 @@ class TreatmentResource extends JsonResource
             'duration_minutes' => $this->duration_minutes,
             'commission_percent' => $this->commission_percent !== null
                 ? (float) $this->commission_percent : null,
+            'commission_base' => $this->commission_base ?? 'price',
+            'cost' => (float) $this->cost,
             'periodicity_days' => $this->periodicity_days,
             'recall_label' => $this->recall_label,
             'requires_consent_template_id' => $this->requires_consent_template_id,

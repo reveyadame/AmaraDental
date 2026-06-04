@@ -17,6 +17,12 @@ export interface PendingCommissionItem {
   treatment_name: string
   line_total: number
   commission_percent: number
+  /** 'price' = sobre lo cobrado; 'profit' = sobre la utilidad (line_total − costo). */
+  commission_base: 'price' | 'profit'
+  /** Costo de insumo descontado por unidad cuando la base es 'profit'. */
+  commission_cost: number
+  /** Monto sobre el que se aplicó el %: line_total en 'price', line_total − costo en 'profit'. */
+  commission_base_amount: number
   commission_amount: number
   /** Sugerencia: comisión proporcional al porcentaje cobrado. */
   commission_paid_share: number
@@ -37,6 +43,9 @@ export interface CommissionPaymentItem {
   treatment_name: string
   patient_name: string | null
   commission_amount: number
+  commission_base?: 'price' | 'profit'
+  commission_cost?: number
+  commission_base_amount?: number
   line_total: number
   charge_date: string | null
 }

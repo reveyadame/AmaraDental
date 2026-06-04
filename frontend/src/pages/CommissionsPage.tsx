@@ -230,8 +230,14 @@ function PendingGroupCard({ group }: { group: PendingCommissionGroup }) {
                     <TableCell className="text-right text-sm tabular-nums font-medium">
                       {formatMXN(it.commission_amount)}
                       <p className="text-[10px] text-muted-foreground">
-                        {it.commission_percent}% de {formatMXN(it.line_total)}
+                        {it.commission_percent}% de {formatMXN(it.commission_base_amount)}
                       </p>
+                      {it.commission_base === 'profit' ? (
+                        <p className="text-[10px] text-muted-foreground">
+                          Utilidad: {formatMXN(it.line_total)} − costo{' '}
+                          {formatMXN(it.line_total - it.commission_base_amount)}
+                        </p>
+                      ) : null}
                       {isAdvance && it.commission_paid_share > 0 ? (
                         <p className="text-[10px] text-amber-700 dark:text-amber-300">
                           Devengado: {formatMXN(it.commission_paid_share)}
