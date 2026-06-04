@@ -11,6 +11,8 @@ jobs:
   sync:
     name: Push backend/ → deploy-backend
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout con historial completo
         uses: actions/checkout@v4
