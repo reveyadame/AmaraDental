@@ -18,6 +18,7 @@ import {
   Menu,
   Microscope,
   Plus,
+  ReceiptText,
   ScrollText,
   Settings,
   ShieldCheck,
@@ -111,6 +112,12 @@ const NAV: NavItem[] = [
     children: [
       { to: '/caja', label: 'Resumen', icon: LayoutDashboard, perms: ['cash.operate'] },
       { to: '/caja/nuevo', label: 'Nuevo cobro', icon: Plus, perms: ['charges.create'] },
+      {
+        to: '/caja/cobros',
+        label: 'Todos los cobros',
+        icon: ReceiptText,
+        perms: ['cash.operate', 'charges.create'],
+      },
       {
         to: '/caja/saldos',
         label: 'Saldos por cobrar',

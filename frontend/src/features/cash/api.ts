@@ -64,6 +64,8 @@ export interface ChargeListQuery {
   patient_id?: number
   date_from?: string
   date_to?: string
+  /** true → solo cobros creados desde que se abrió la caja actual (precisión de hora). */
+  current_session?: boolean
   has_balance?: boolean
   oldest_first?: boolean
   page?: number

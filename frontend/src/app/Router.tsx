@@ -13,6 +13,7 @@ import { AddPaymentPage } from '@/features/cash/AddPaymentPage'
 import { NewChargePage } from '@/features/cash/NewChargePage'
 import { PrintAccountStatementPage } from '@/features/cash/PrintAccountStatementPage'
 import { PendingBalancesPage } from '@/pages/PendingBalancesPage'
+import { AllChargesPage } from '@/pages/AllChargesPage'
 import { CashSessionsHistoryPage } from '@/pages/CashSessionsHistoryPage'
 import { CashMovementsPage } from '@/pages/CashMovementsPage'
 import { PrintCashSessionPage } from '@/features/cash/PrintCashSessionPage'
@@ -118,6 +119,7 @@ export function Router() {
       />
       <Route path="/caja" element={<Shell><CashPage /></Shell>} />
       <Route path="/caja/nuevo" element={<Shell><NewChargePage /></Shell>} />
+      <Route path="/caja/cobros" element={<Shell><AllChargesPage /></Shell>} />
       <Route path="/caja/saldos" element={<Shell><PendingBalancesPage /></Shell>} />
       <Route path="/caja/cortes" element={<Shell><CashSessionsHistoryPage /></Shell>} />
       <Route path="/caja/movimientos" element={<Shell><CashMovementsPage /></Shell>} />
