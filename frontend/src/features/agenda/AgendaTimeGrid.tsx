@@ -335,7 +335,7 @@ export function AgendaTimeGrid({
       startMin,
       durationMin: d.durationMin,
       conflict: hasOverlap(appointments, blocks, d.appt, s, s + d.durationMin * 60_000),
-      past: s < Date.now(),
+      past: s < now.getTime(),
     })
   }
 
@@ -549,7 +549,11 @@ export function AgendaTimeGrid({
                     : null
                   const compact = height < 38
                   const selected = selectedId === appt.id
-                  const canDrag = !!onReschedule && appt.status !== 'cancelled'
+                  // Las citas canceladas o completadas no se reprograman por drag.
+                  const canDrag =
+                    !!onReschedule &&
+                    appt.status !== 'cancelled' &&
+                    appt.status !== 'completed'
                   return (
                     <div
                       key={appt.id}
