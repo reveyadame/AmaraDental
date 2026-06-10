@@ -50,6 +50,15 @@ class ChargesController extends Controller implements HasMiddleware
                 fn ($q) => $q->whereDate('created_at', '>=', $request->date('date_from')))
             ->when($request->filled('date_to'),
                 fn ($q) => $q->whereDate('created_at', '<=', $request->date('date_to')))
+            // current_session=true → cobros creados desde que se abrió la caja
+            // actual (precisión de hora, no de día). Si no hay caja abierta,
+            // no regresa nada — la vista muestra el aviso correspondiente.
+            ->when($request->boolean('current_session'), function ($q) {
+                $open = CashSession::query()->where('status', 'open')->first();
+                $open
+                    ? $q->where('created_at', '>=', $open->opened_at)
+                    : $q->whereRaw('1 = 0');
+            })
             // has_balance=true → solo cobros con saldo (pendiente o parcial).
             ->when($request->boolean('has_balance'),
                 fn ($q) => $q->where('balance', '>', 0)->whereIn('status', ['pending', 'partial']))
