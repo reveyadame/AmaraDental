@@ -66,6 +66,8 @@ export interface ChargeListQuery {
   date_to?: string
   /** true → solo cobros creados desde que se abrió la caja actual (precisión de hora). */
   current_session?: boolean
+  /** true → omite cobros cancelados del listado. */
+  exclude_cancelled?: boolean
   has_balance?: boolean
   oldest_first?: boolean
   page?: number

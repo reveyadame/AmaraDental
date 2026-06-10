@@ -5,6 +5,7 @@ import {
   useAgendaBlocks,
   useAppointments,
   useChangeAppointmentStatus,
+  useRescheduleAppointment,
 } from '@/features/agenda/hooks'
 import { AppointmentDialog } from '@/features/agenda/AppointmentDialog'
 import { AgendaBlockDialog } from '@/features/agenda/AgendaBlockDialog'
@@ -62,6 +63,19 @@ function addDays(d: Date, n: number): Date {
   return x
 }
 
+/** Extrae el mensaje de conflicto que devuelve el backend (422). */
+function rescheduleErrorMessage(err: unknown): string {
+  const fallback = 'No fue posible reprogramar la cita'
+  if (err && typeof err === 'object' && 'response' in err) {
+    const data = (
+      err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
+    ).response?.data
+    const first = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined
+    return first ?? data?.message ?? fallback
+  }
+  return fallback
+}
+
 export function AgendaPage() {
   const { data: me } = useMe()
   const specialists = useSpecialists()
@@ -112,6 +126,7 @@ export function AgendaPage() {
   })
 
   const changeStatus = useChangeAppointmentStatus(editingAppt?.id ?? 0)
+  const reschedule = useRescheduleAppointment()
 
   const navigate = (delta: -1 | 1) => {
     setCursor((d) => addDays(d, view === 'day' ? delta : delta * 7))
@@ -123,6 +138,10 @@ export function AgendaPage() {
   }
 
   const onPickSlot = (slot: Date) => {
+    if (slot.getTime() < Date.now()) {
+      toast.error('No se puede agendar en una fecha u hora pasada')
+      return
+    }
     setEditingAppt(null)
     setSlotDate(slot)
     setDialogOpen(true)
@@ -137,6 +156,29 @@ export function AgendaPage() {
   }
 
   const canManageAgenda = me?.permissions.includes('appointments.manage') ?? false
+
+  const onReschedule = (appt: Appointment, startsAt: Date, endsAt: Date) => {
+    reschedule.mutate(
+      {
+        id: appt.id,
+        starts_at: startsAt.toISOString(),
+        ends_at: endsAt.toISOString(),
+      },
+      {
+        onSuccess: () =>
+          toast.success(
+            `Cita reprogramada — ${startsAt.toLocaleString('es-MX', {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}`,
+          ),
+        onError: (err) => toast.error(rescheduleErrorMessage(err)),
+      },
+    )
+  }
 
   const title =
     view === 'day'
@@ -306,6 +348,7 @@ export function AgendaPage() {
           onSelectAppointment={onSelectAppointment}
           onSelectBlock={(b) => setBlockDialog({ open: true, block: b })}
           onPickSlot={onPickSlot}
+          onReschedule={canManageAgenda ? onReschedule : undefined}
         />
       )}
 

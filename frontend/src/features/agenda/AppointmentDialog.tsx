@@ -140,6 +140,13 @@ export function AppointmentDialog({
     }
 
     const startsAt = fromLocalInputValue(start)
+    // No se puede agendar en el pasado. Al editar una cita ya existente sin
+    // moverla se permite (el backend valida el resto); por eso solo se bloquea
+    // en alta o cuando se cambia el horario a uno anterior al actual.
+    if (!isEdit && startsAt.getTime() < Date.now()) {
+      toast.error('No se puede agendar en una fecha u hora pasada')
+      return
+    }
     const endsAt = new Date(startsAt.getTime() + duration * 60_000)
 
     const payload = {
@@ -267,6 +274,7 @@ export function AppointmentDialog({
                 id="start"
                 type="datetime-local"
                 value={start}
+                min={isEdit ? undefined : toLocalInputValue(new Date())}
                 onChange={(e) => setStart(e.target.value)}
               />
             </div>

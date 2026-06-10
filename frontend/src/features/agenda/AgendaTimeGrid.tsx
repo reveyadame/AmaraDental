@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Lock, Sparkles } from 'lucide-react'
 import {
   APPOINTMENT_STATUS_LABELS,
@@ -17,6 +17,8 @@ const HOUR_PX = 56
 const HOURS = HOUR_END - HOUR_START
 const GRID_HEIGHT = HOURS * HOUR_PX
 const GUTTER_W = 56
+const SNAP_MIN = 15 // los slots se ajustan a múltiplos de 15 min al arrastrar
+const DRAG_THRESHOLD = 5 // px de movimiento antes de iniciar el arrastre (vs. click)
 
 interface StatusStyle {
   bg: string
@@ -51,6 +53,14 @@ function sameDay(a: Date, b: Date): boolean {
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+}
+
+/** Minuto dentro de la ventana visible (0 = HOUR_START) → etiqueta HH:MM. */
+function windowMinuteLabel(startMin: number): string {
+  const total = HOUR_START * 60 + startMin
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
 const HOUR_ROWS = Array.from({ length: HOURS }, (_, i) => HOUR_START + i)
@@ -167,6 +177,36 @@ function splitBlocks(blocks: AgendaBlock[], day: Date) {
   return { allDay, timed }
 }
 
+/** Milisegundos del inicio de la ventana visible (HOUR_START) de un día. */
+function windowStartMs(day: Date): number {
+  return startOfDay(day).getTime() + HOUR_START * 3_600_000
+}
+
+/**
+ * Pista visual de disponibilidad para la vista previa al arrastrar: ¿el rango
+ * [startMs, endMs) choca con otra cita activa del mismo especialista o con un
+ * bloqueo aplicable? El backend hace la validación definitiva al soltar.
+ */
+function hasOverlap(
+  appts: Appointment[],
+  blocks: AgendaBlock[],
+  appt: Appointment,
+  startMs: number,
+  endMs: number,
+): boolean {
+  for (const a of appts) {
+    if (a.id === appt.id || a.specialist_id !== appt.specialist_id || a.status === 'cancelled') {
+      continue
+    }
+    if (+new Date(a.starts_at) < endMs && +new Date(a.ends_at) > startMs) return true
+  }
+  for (const b of blocks) {
+    if (b.specialist_id != null && b.specialist_id !== appt.specialist_id) continue
+    if (+new Date(b.starts_at) < endMs && +new Date(b.ends_at) > startMs) return true
+  }
+  return false
+}
+
 interface Props {
   days: Date[]
   appointments: Appointment[]
@@ -176,6 +216,11 @@ interface Props {
   onSelectAppointment: (a: Appointment) => void
   onSelectBlock?: (b: AgendaBlock) => void
   onPickSlot?: (slot: Date) => void
+  /**
+   * Si se pasa, las citas se pueden arrastrar para reprogramarlas (cambiar
+   * fecha/hora). Recibe la cita y el nuevo rango; conserva todo lo demás.
+   */
+  onReschedule?: (appt: Appointment, startsAt: Date, endsAt: Date) => void
 }
 
 export function AgendaTimeGrid({
@@ -187,6 +232,7 @@ export function AgendaTimeGrid({
   onSelectAppointment,
   onSelectBlock,
   onPickSlot,
+  onReschedule,
 }: Props) {
   const isWeek = days.length > 1
   const now = new Date()
@@ -203,8 +249,123 @@ export function AgendaTimeGrid({
 
   const hasAllDay = perDay.some((d) => d.allDay.length > 0)
 
+  // ─── Drag & drop para reprogramar (estilo Google Calendar) ───────────────
+  // Usamos pointer capture sobre la cita: los eventos de mover/soltar siguen
+  // llegando a la cita aunque el cursor salga de ella, sin listeners globales.
+  // La disponibilidad real del especialista la valida el backend al soltar.
+  const colRefs = useRef<(HTMLDivElement | null)[]>([])
+  const suppressClickRef = useRef(false)
+  const dragRef = useRef<{
+    appt: Appointment
+    pointerId: number
+    durationMin: number
+    grabOffsetMin: number
+    startX: number
+    startY: number
+    active: boolean
+    target: { dayIndex: number; startMin: number } | null
+  } | null>(null)
+  const [draggingId, setDraggingId] = useState<number | null>(null)
+  const [preview, setPreview] = useState<{
+    dayIndex: number
+    startMin: number
+    durationMin: number
+    conflict: boolean
+    past: boolean
+  } | null>(null)
+
+  const onApptPointerDown = (
+    e: React.PointerEvent<HTMLDivElement>,
+    appt: Appointment,
+    dayIndex: number,
+  ) => {
+    if (!onReschedule || e.button !== 0) return
+    // No iniciar arrastre desde controles internos (ej. menú de estado).
+    if ((e.target as HTMLElement).closest('[data-no-drag]')) return
+    const colEl = colRefs.current[dayIndex]
+    if (!colEl) return
+    const winStart = windowStartMs(days[dayIndex]!)
+    const pointerMin = ((e.clientY - colEl.getBoundingClientRect().top) / HOUR_PX) * 60
+    dragRef.current = {
+      appt,
+      pointerId: e.pointerId,
+      durationMin: (+new Date(appt.ends_at) - +new Date(appt.starts_at)) / 60_000,
+      grabOffsetMin: pointerMin - (+new Date(appt.starts_at) - winStart) / 60_000,
+      startX: e.clientX,
+      startY: e.clientY,
+      active: false,
+      target: null,
+    }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  const onApptPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current
+    if (!d || e.pointerId !== d.pointerId) return
+    if (!d.active) {
+      if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < DRAG_THRESHOLD) return
+      d.active = true
+      suppressClickRef.current = true
+      setDraggingId(d.appt.id)
+    }
+    // Columna destino: la que contiene el cursor (o la más cercana).
+    let targetIndex = 0
+    let best = Infinity
+    colRefs.current.forEach((el, i) => {
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      const dist =
+        e.clientX < r.left ? r.left - e.clientX : e.clientX > r.right ? e.clientX - r.right : 0
+      if (dist < best) {
+        best = dist
+        targetIndex = i
+      }
+    })
+    const colEl = colRefs.current[targetIndex]
+    if (!colEl) return
+    const winStart = windowStartMs(days[targetIndex]!)
+    const pointerMin = ((e.clientY - colEl.getBoundingClientRect().top) / HOUR_PX) * 60
+    let startMin = pointerMin - d.grabOffsetMin
+    startMin = Math.round(startMin / SNAP_MIN) * SNAP_MIN
+    startMin = Math.max(0, Math.min(HOURS * 60 - d.durationMin, startMin))
+    const s = winStart + startMin * 60_000
+    d.target = { dayIndex: targetIndex, startMin }
+    setPreview({
+      dayIndex: targetIndex,
+      startMin,
+      durationMin: d.durationMin,
+      conflict: hasOverlap(appointments, blocks, d.appt, s, s + d.durationMin * 60_000),
+      past: s < Date.now(),
+    })
+  }
+
+  const onApptPointerUp = () => {
+    const d = dragRef.current
+    dragRef.current = null
+    if (!d) return
+    setDraggingId(null)
+    setPreview(null)
+    if (!d.active || !d.target) return
+    // Ignora el click sintético posterior al pointerup (no seleccionar ni abrir
+    // "crear cita"); se libera en el siguiente tick.
+    setTimeout(() => {
+      suppressClickRef.current = false
+    }, 0)
+    const winStart = windowStartMs(days[d.target.dayIndex]!)
+    const newStart = new Date(winStart + d.target.startMin * 60_000)
+    if (+newStart === +new Date(d.appt.starts_at)) return
+    onReschedule?.(d.appt, newStart, new Date(newStart.getTime() + d.durationMin * 60_000))
+  }
+
+  const onApptPointerCancel = () => {
+    dragRef.current = null
+    suppressClickRef.current = false
+    setDraggingId(null)
+    setPreview(null)
+  }
+
   const pickSlot = (e: React.MouseEvent<HTMLDivElement>, day: Date) => {
-    if (!onPickSlot) return
+    if (!onPickSlot || suppressClickRef.current) return
     const rect = e.currentTarget.getBoundingClientRect()
     const y = e.clientY - rect.top
     const totalMin = Math.max(0, Math.min(HOURS * 60, (y / HOUR_PX) * 60))
@@ -215,7 +376,12 @@ export function AgendaTimeGrid({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+    <div
+      className={cn(
+        'overflow-x-auto rounded-xl border bg-card shadow-sm',
+        draggingId !== null && 'cursor-grabbing select-none',
+      )}
+    >
       <div style={{ minWidth: isWeek ? 760 : undefined }}>
         {/* Cabecera de días (sticky) */}
         <div className="sticky top-0 z-20 flex border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -306,11 +472,25 @@ export function AgendaTimeGrid({
           </div>
 
           {/* Columnas por día */}
-          {perDay.map(({ date, appts, timed }) => {
+          {perDay.map(({ date, appts, timed }, dayIndex) => {
             const isToday = sameDay(date, now)
+            // Altura (px) de la franja "pasada": día completo si ya pasó, o
+            // hasta la hora actual si es hoy. Días futuros no se sombrean.
+            const dayStartMs = startOfDay(date).getTime()
+            const todayStartMs = startOfDay(now).getTime()
+            let pastPx = 0
+            if (dayStartMs < todayStartMs) {
+              pastPx = GRID_HEIGHT
+            } else if (dayStartMs === todayStartMs) {
+              const nowMin = (now.getHours() - HOUR_START) * 60 + now.getMinutes()
+              pastPx = Math.max(0, Math.min(GRID_HEIGHT, (nowMin / 60) * HOUR_PX))
+            }
             return (
               <div
                 key={date.toISOString()}
+                ref={(el) => {
+                  colRefs.current[dayIndex] = el
+                }}
                 className="relative flex-1 min-w-0 border-l first:border-l-0"
                 style={{ height: GRID_HEIGHT }}
               >
@@ -320,6 +500,16 @@ export function AgendaTimeGrid({
                   onClick={(e) => pickSlot(e, date)}
                   aria-label="Crear cita"
                 />
+
+                {/* Franja "pasada": no se puede agendar antes del momento actual */}
+                {pastPx > 0 ? (
+                  <div
+                    className="pointer-events-none absolute inset-x-0 top-0 z-10 border-b border-border bg-muted/40 bg-[repeating-linear-gradient(45deg,_var(--muted)_0_5px,_transparent_5px_10px)] opacity-70"
+                    style={{ height: pastPx }}
+                    title="No se puede agendar en el pasado"
+                    aria-hidden
+                  />
+                ) : null}
 
                 {/* Líneas de hora */}
                 {HOUR_ROWS.map((h, i) => (
@@ -359,12 +549,22 @@ export function AgendaTimeGrid({
                     : null
                   const compact = height < 38
                   const selected = selectedId === appt.id
+                  const canDrag = !!onReschedule && appt.status !== 'cancelled'
                   return (
                     <div
                       key={appt.id}
                       role="button"
                       tabIndex={0}
-                      onClick={() => onSelectAppointment(appt)}
+                      onPointerDown={
+                        canDrag ? (e) => onApptPointerDown(e, appt, dayIndex) : undefined
+                      }
+                      onPointerMove={canDrag ? onApptPointerMove : undefined}
+                      onPointerUp={canDrag ? onApptPointerUp : undefined}
+                      onPointerCancel={canDrag ? onApptPointerCancel : undefined}
+                      onClick={() => {
+                        if (suppressClickRef.current) return
+                        onSelectAppointment(appt)
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault()
@@ -375,17 +575,20 @@ export function AgendaTimeGrid({
                         appt.patient_is_first_visit ? ' · Primera vez' : ''
                       }`}
                       className={cn(
-                        'group absolute z-20 overflow-hidden rounded-md border-l-4 px-1.5 py-0.5 text-left shadow-sm transition cursor-pointer',
+                        'group absolute z-20 overflow-hidden rounded-md border-l-4 px-1.5 py-0.5 text-left shadow-sm transition',
                         style.bg,
                         style.text,
                         specColor ? specColor.leftBorder : style.accent,
                         selected && 'ring-2 ring-primary ring-offset-1',
+                        canDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
+                        draggingId === appt.id && 'opacity-40',
                       )}
                       style={{
                         top,
                         height,
                         left: `calc(${leftPct}% + 2px)`,
                         width: `calc(${widthPct}% - 4px)`,
+                        touchAction: canDrag ? 'none' : undefined,
                       }}
                     >
                       <div className="flex items-start gap-1">
@@ -430,13 +633,39 @@ export function AgendaTimeGrid({
                             </>
                           )}
                         </div>
-                        <div className="opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+                        <div
+                          data-no-drag
+                          className="opacity-0 transition group-hover:opacity-100 focus-within:opacity-100"
+                        >
                           <AppointmentStatusMenu appointment={appt} />
                         </div>
                       </div>
                     </div>
                   )
                 })}
+
+                {/* Vista previa del destino al arrastrar una cita */}
+                {preview && preview.dayIndex === dayIndex ? (
+                  <div
+                    className={cn(
+                      'pointer-events-none absolute inset-x-0.5 z-40 flex flex-col justify-start overflow-hidden rounded-md border-2 border-dashed px-1.5 py-0.5 text-[10px] font-semibold shadow-lg',
+                      preview.past || preview.conflict
+                        ? 'border-rose-500 bg-rose-500/20 text-rose-900'
+                        : 'border-primary bg-primary/15 text-primary',
+                    )}
+                    style={{
+                      top: (preview.startMin / 60) * HOUR_PX,
+                      height: Math.max(18, (preview.durationMin / 60) * HOUR_PX),
+                    }}
+                  >
+                    <span className="tabular-nums">{windowMinuteLabel(preview.startMin)}</span>
+                    {preview.past ? (
+                      <span>Pasado</span>
+                    ) : preview.conflict ? (
+                      <span>Ocupado</span>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 {/* Línea de "ahora" solo en la columna de hoy */}
                 {isToday ? <NowLine /> : null}

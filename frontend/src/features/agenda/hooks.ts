@@ -18,7 +18,7 @@ import {
   type AppointmentPayload,
   type AppointmentQuery,
 } from './api'
-import type { AppointmentStatus } from '@/shared/types/agenda'
+import type { Appointment, AppointmentStatus } from '@/shared/types/agenda'
 
 const listKey = (q: AppointmentQuery) => ['appointments', q] as const
 const itemKey = (id: number) => ['appointments', id] as const
@@ -53,6 +53,43 @@ export function useUpdateAppointment(id: number) {
   return useMutation({
     mutationFn: (p: Partial<AppointmentPayload>) => updateAppointment(id, p),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['appointments'] }),
+  })
+}
+
+/**
+ * Reprograma una cita (drag & drop en la agenda). Solo mueve fecha/hora —
+ * conserva todo lo demás. Actualiza de forma optimista todas las listas de
+ * citas en caché para que la cita "salte" al instante, y revierte si el
+ * backend rechaza el cambio (especialista no disponible / agenda cerrada).
+ */
+export function useRescheduleAppointment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      starts_at,
+      ends_at,
+    }: {
+      id: number
+      starts_at: string
+      ends_at: string
+    }) => updateAppointment(id, { starts_at, ends_at }),
+    onMutate: async ({ id, starts_at, ends_at }) => {
+      await qc.cancelQueries({ queryKey: ['appointments'] })
+      const snapshots = qc.getQueriesData<Appointment[]>({ queryKey: ['appointments'] })
+      snapshots.forEach(([key, list]) => {
+        if (!Array.isArray(list)) return
+        qc.setQueryData(
+          key,
+          list.map((a) => (a.id === id ? { ...a, starts_at, ends_at } : a)),
+        )
+      })
+      return { snapshots }
+    },
+    onError: (_err, _vars, ctx) => {
+      ctx?.snapshots.forEach(([key, list]) => qc.setQueryData(key, list))
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['appointments'] }),
   })
 }
 

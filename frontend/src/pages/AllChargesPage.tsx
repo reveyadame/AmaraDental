@@ -37,7 +37,8 @@ import { accent } from '@/shared/lib/module-accents'
 const PER_PAGE = 500
 
 type Mode = 'session' | 'range'
-type StatusFilter = 'all' | ChargeStatus
+// Esta vista omite cobros cancelados, por eso 'cancelled' no es opción.
+type StatusFilter = 'all' | Exclude<ChargeStatus, 'cancelled'>
 
 /** Fecha local (no UTC) en formato YYYY-MM-DD para los inputs. */
 function todayLocal(): string {
@@ -71,7 +72,7 @@ export function AllChargesPage() {
   const noOpenSession = mode === 'session' && !session.isPending && !session.data
 
   const listQuery: ChargeListQuery = useMemo(() => {
-    const q: ChargeListQuery = { per_page: PER_PAGE }
+    const q: ChargeListQuery = { per_page: PER_PAGE, exclude_cancelled: true }
     if (mode === 'session') {
       q.current_session = true
     } else {
@@ -128,7 +129,7 @@ export function AllChargesPage() {
           </h1>
           <p className="text-sm text-muted-foreground">
             Todos los cobros realizados, con o sin pagos registrados. Desde la apertura de la
-            caja actual o dentro de un rango de fechas.
+            caja actual o dentro de un rango de fechas. Se omiten los cobros cancelados.
           </p>
         </div>
       </header>
@@ -202,7 +203,6 @@ export function AllChargesPage() {
                 <SelectItem value="pending">Pendiente</SelectItem>
                 <SelectItem value="partial">Parcial</SelectItem>
                 <SelectItem value="paid">Pagado</SelectItem>
-                <SelectItem value="cancelled">Cancelado</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -44,6 +44,9 @@ class ChargesController extends Controller implements HasMiddleware
             ->with(['patient', 'createdBy'])
             ->when($request->filled('status'),
                 fn ($q) => $q->where('status', $request->string('status')))
+            // exclude_cancelled=true → omite cobros cancelados del listado.
+            ->when($request->boolean('exclude_cancelled'),
+                fn ($q) => $q->where('status', '!=', 'cancelled'))
             ->when($request->filled('patient_id'),
                 fn ($q) => $q->where('patient_id', $request->integer('patient_id')))
             ->when($request->filled('date_from'),

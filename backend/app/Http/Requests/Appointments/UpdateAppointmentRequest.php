@@ -7,6 +7,7 @@ namespace App\Http\Requests\Appointments;
 use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Support\AppointmentAvailability;
+use Carbon\Carbon;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -57,6 +58,22 @@ class UpdateAppointmentRequest extends FormRequest
             if (! $current) {
                 return;
             }
+            // Reprogramar al pasado no se permite. Solo aplica cuando se cambia
+            // el horario a un valor distinto; re-guardar una cita pasada sin
+            // moverla (ej. editar notas) sí se permite.
+            if ($this->has('starts_at')) {
+                $newStart = Carbon::parse((string) $this->input('starts_at'));
+                // Comparación a nivel de minuto: editar una cita pasada sin
+                // moverla reenvía el mismo horario (sin segundos) y debe pasar.
+                $moved = ! $newStart->copy()->startOfMinute()
+                    ->equalTo($current->starts_at->copy()->startOfMinute());
+                if ($moved && $newStart->isPast()) {
+                    $v->errors()->add('starts_at', 'No se puede reprogramar a una fecha u hora pasada.');
+
+                    return;
+                }
+            }
+
             // Valores efectivos: del request si vienen, si no de la cita actual.
             $specialistId = (int) ($this->input('specialist_id')
                 ?? $current->specialist_id);

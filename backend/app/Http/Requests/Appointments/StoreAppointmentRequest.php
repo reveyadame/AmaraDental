@@ -7,6 +7,7 @@ namespace App\Http\Requests\Appointments;
 use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Support\AppointmentAvailability;
+use Carbon\Carbon;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -38,6 +39,12 @@ class StoreAppointmentRequest extends FormRequest
     {
         $validator->after(function (Validator $v): void {
             if ($v->errors()->isNotEmpty()) {
+                return;
+            }
+            // No se puede agendar en el pasado (días pasados u horas ya transcurridas hoy).
+            if (Carbon::parse((string) $this->input('starts_at'))->isPast()) {
+                $v->errors()->add('starts_at', 'No se puede agendar una cita en una fecha u hora pasada.');
+
                 return;
             }
             $conflict = AppointmentAvailability::findConflict(
