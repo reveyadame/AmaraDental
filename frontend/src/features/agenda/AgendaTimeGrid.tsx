@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
-import { Lock, Sparkles } from 'lucide-react'
+import { Lock, Phone, Sparkles } from 'lucide-react'
 import {
   APPOINTMENT_STATUS_LABELS,
+  SELECTABLE_APPOINTMENT_STATUSES,
   type AgendaBlock,
   type Appointment,
   type AppointmentStatus,
@@ -576,8 +577,8 @@ export function AgendaTimeGrid({
                         }
                       }}
                       title={`${formatTime(appt.starts_at)} · ${appt.patient_name ?? ''}${
-                        appt.patient_is_first_visit ? ' · Primera vez' : ''
-                      }`}
+                        appt.patient_phone ? ` · ${appt.patient_phone}` : ''
+                      }${appt.patient_is_first_visit ? ' · Primera vez' : ''}`}
                       className={cn(
                         'group absolute z-20 overflow-hidden rounded-md border-l-4 px-1.5 py-0.5 text-left shadow-sm transition',
                         style.bg,
@@ -624,6 +625,12 @@ export function AgendaTimeGrid({
                                 ) : null}
                                 <span className="truncate">{appt.patient_name ?? '—'}</span>
                               </p>
+                              {appt.patient_phone ? (
+                                <p className="truncate text-[10px] opacity-80 flex items-center gap-1">
+                                  <Phone className="size-2.5 shrink-0" aria-label="Teléfono" />
+                                  <span className="truncate">{appt.patient_phone}</span>
+                                </p>
+                              ) : null}
                               {appt.treatment_name ? (
                                 <p className="truncate text-[10px] opacity-80">
                                   {appt.treatment_name}
@@ -639,9 +646,22 @@ export function AgendaTimeGrid({
                         </div>
                         <div
                           data-no-drag
+                          // Corta la propagación de los eventos de puntero y
+                          // click hacia la tarjeta: si no, el handler de
+                          // arrastrar-para-reprogramar captura el puntero
+                          // (setPointerCapture) y le roba el `pointerup` al
+                          // menú, por lo que el cambio de estado no se aplica y
+                          // se abre el modal de edición. El menú de Radix vive
+                          // en un portal, pero sus eventos sintéticos burbujean
+                          // por el árbol de React hasta aquí.
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
                           className="opacity-0 transition group-hover:opacity-100 focus-within:opacity-100"
                         >
-                          <AppointmentStatusMenu appointment={appt} />
+                          <AppointmentStatusMenu
+                            appointment={appt}
+                            onEdit={() => onSelectAppointment(appt)}
+                          />
                         </div>
                       </div>
                     </div>
@@ -698,7 +718,7 @@ function NowLine() {
 export function StatusLegend() {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
-      {(Object.keys(APPOINTMENT_STATUS_LABELS) as AppointmentStatus[]).map((key) => (
+      {SELECTABLE_APPOINTMENT_STATUSES.map((key) => (
         <span key={key} className="inline-flex items-center gap-1.5">
           <span className={cn('inline-block size-2.5 rounded-full', STATUS_STYLE[key].dot)} />
           {APPOINTMENT_STATUS_LABELS[key]}

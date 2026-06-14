@@ -1,4 +1,4 @@
-import { Check, MoreVertical, UserX } from 'lucide-react'
+import { Check, MoreVertical, Pencil, Phone, UserX } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   useNoShowAndDiscardPatient,
@@ -6,6 +6,7 @@ import {
 } from './hooks'
 import {
   APPOINTMENT_STATUS_LABELS,
+  SELECTABLE_APPOINTMENT_STATUSES,
   type Appointment,
   type AppointmentStatus,
 } from '@/shared/types/agenda'
@@ -37,12 +38,16 @@ interface Props {
    *  botón de tres puntos por defecto. */
   trigger?: React.ReactNode
   align?: 'start' | 'center' | 'end'
+  /** Abre el formulario de edición de la cita. Si se omite, no se muestra la
+   *  opción "Editar cita". */
+  onEdit?: () => void
 }
 
 export function AppointmentStatusMenu({
   appointment,
   trigger,
   align = 'end',
+  onEdit,
 }: Props) {
   const mutation = useQuickChangeAppointmentStatus()
   const noShowDiscard = useNoShowAndDiscardPatient()
@@ -123,20 +128,44 @@ export function AppointmentStatusMenu({
         className="w-60"
         onClick={(e) => e.stopPropagation()}
       >
-        <DropdownMenuLabel className="text-xs">
-          Cambiar estado
+        <DropdownMenuLabel className="pb-0.5">
+          <span className="block truncate text-sm">
+            {appointment.patient_name ?? 'Paciente'}
+          </span>
+          {appointment.patient_phone ? (
+            <a
+              href={`tel:${appointment.patient_phone}`}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-0.5 inline-flex items-center gap-1 text-xs font-normal text-muted-foreground hover:text-foreground hover:underline"
+            >
+              <Phone className="size-3 shrink-0" />
+              {appointment.patient_phone}
+            </a>
+          ) : null}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {(Object.keys(APPOINTMENT_STATUS_LABELS) as AppointmentStatus[]).map(
+        {onEdit ? (
+          <>
+            <DropdownMenuItem
+              onSelect={() => onEdit()}
+              className="gap-2"
+            >
+              <Pencil className="size-3.5 shrink-0" />
+              <span className="flex-1">Editar cita</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+          Cambiar estado
+        </DropdownMenuLabel>
+        {SELECTABLE_APPOINTMENT_STATUSES.map(
           (s) => {
             const active = appointment.status === s
             return (
               <DropdownMenuItem
                 key={s}
-                onSelect={(e) => {
-                  e.preventDefault()
-                  onChange(s)
-                }}
+                onSelect={() => onChange(s)}
                 className="gap-2"
                 disabled={mutation.isPending}
               >

@@ -4,7 +4,6 @@ import { toast } from 'sonner'
 import {
   useAgendaBlocks,
   useAppointments,
-  useChangeAppointmentStatus,
   useRescheduleAppointment,
 } from '@/features/agenda/hooks'
 import { AppointmentDialog } from '@/features/agenda/AppointmentDialog'
@@ -13,14 +12,8 @@ import { AgendaTimeGrid, StatusLegend } from '@/features/agenda/AgendaTimeGrid'
 import { IcsFeedCard } from '@/features/agenda/IcsFeedCard'
 import { useSpecialists } from '@/features/specialists/hooks'
 import { useMe } from '@/features/auth/hooks'
-import type {
-  AgendaBlock,
-  Appointment,
-  AppointmentStatus,
-} from '@/shared/types/agenda'
-import { APPOINTMENT_STATUS_LABELS } from '@/shared/types/agenda'
+import type { AgendaBlock, Appointment } from '@/shared/types/agenda'
 import { Button } from '@/shared/ui/button'
-import { Card } from '@/shared/ui/card'
 import { Skeleton } from '@/shared/ui/skeleton'
 import {
   Select,
@@ -125,16 +118,18 @@ export function AgendaPage() {
       specialistFilter !== 'all' ? Number(specialistFilter) : undefined,
   })
 
-  const changeStatus = useChangeAppointmentStatus(editingAppt?.id ?? 0)
   const reschedule = useRescheduleAppointment()
 
   const navigate = (delta: -1 | 1) => {
     setCursor((d) => addDays(d, view === 'day' ? delta : delta * 7))
   }
 
+  // Al elegir una cita (clic en la tarjeta o "Editar cita" del menú) se abre
+  // directo el formulario de edición.
   const onSelectAppointment = (a: Appointment) => {
     setEditingAppt(a)
     setSlotDate(null)
+    setDialogOpen(true)
   }
 
   const onPickSlot = (slot: Date) => {
@@ -145,14 +140,6 @@ export function AgendaPage() {
     setEditingAppt(null)
     setSlotDate(slot)
     setDialogOpen(true)
-  }
-
-  const onChangeStatus = (status: AppointmentStatus) => {
-    if (!editingAppt) return
-    changeStatus.mutate(status, {
-      onSuccess: () => toast.success('Estado actualizado'),
-      onError: () => toast.error('No fue posible cambiar el estado'),
-    })
   }
 
   const canManageAgenda = me?.permissions.includes('appointments.manage') ?? false
@@ -282,60 +269,6 @@ export function AgendaPage() {
         </div>
       </div>
 
-      {editingAppt ? (
-        <Card className="p-4 space-y-3 border-primary/40">
-          <div className="flex items-start justify-between gap-2 flex-wrap">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Cambiar estado · {editingAppt.patient_name}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {new Date(editingAppt.starts_at).toLocaleString('es-MX', {
-                  weekday: 'short',
-                  day: 'numeric',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-                {editingAppt.treatment_name
-                  ? ` · ${editingAppt.treatment_name}`
-                  : ''}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setEditingAppt(null)}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              Cerrar
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {(
-              Object.keys(APPOINTMENT_STATUS_LABELS) as AppointmentStatus[]
-            ).map((s) => (
-              <Button
-                key={s}
-                size="sm"
-                variant={editingAppt.status === s ? 'default' : 'outline'}
-                onClick={() => onChangeStatus(s)}
-                disabled={changeStatus.isPending}
-              >
-                {APPOINTMENT_STATUS_LABELS[s]}
-              </Button>
-            ))}
-          </div>
-          <Button
-            variant="link"
-            size="sm"
-            className="px-0"
-            onClick={() => setDialogOpen(true)}
-          >
-            Editar detalles…
-          </Button>
-        </Card>
-      ) : null}
-
       {appts.isPending ? (
         <Skeleton className="h-[28rem] w-full" />
       ) : (
@@ -363,7 +296,10 @@ export function AgendaPage() {
 
       <AppointmentDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={(o) => {
+          setDialogOpen(o)
+          if (!o) setEditingAppt(null)
+        }}
         initialDate={slotDate}
         appointment={editingAppt}
       />

@@ -17,6 +17,20 @@ export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
   cancelled: 'Cancelada',
 }
 
+/**
+ * Estados que el usuario puede elegir manualmente en la agenda. Los valores
+ * `arrived`/`in_room` quedan como legacy: se conservan en los mapas de arriba
+ * para no romper el render de citas históricas que aún los tengan, pero ya no
+ * se ofrecen al cambiar el estado ni aparecen en la leyenda.
+ */
+export const SELECTABLE_APPOINTMENT_STATUSES: AppointmentStatus[] = [
+  'scheduled',
+  'confirmed',
+  'completed',
+  'no_show',
+  'cancelled',
+]
+
 export const APPOINTMENT_STATUS_VARIANT: Record<
   AppointmentStatus,
   'default' | 'secondary' | 'outline' | 'destructive'
@@ -34,6 +48,7 @@ export interface Appointment {
   id: number
   patient_id: number
   patient_name?: string
+  patient_phone?: string | null
   patient_is_first_visit?: boolean
   specialist_id: number
   specialist_name?: string
