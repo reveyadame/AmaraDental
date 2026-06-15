@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
 use App\Http\Resources\AuditResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -27,11 +26,7 @@ class AuditsController extends Controller implements HasMiddleware
 
     public function index(Request $request): JsonResponse
     {
-        abort_unless(
-            $request->user()?->hasRole(Role::Admin->value),
-            403,
-            'Solo el administrador puede consultar la bitácora.',
-        );
+        $this->requireAdmin('Solo el administrador puede consultar la bitácora.');
 
         $audits = Audit::query()
             ->when($request->filled('user_id'),
@@ -79,11 +74,7 @@ class AuditsController extends Controller implements HasMiddleware
      */
     public function meta(Request $request): JsonResponse
     {
-        abort_unless(
-            $request->user()?->hasRole(Role::Admin->value),
-            403,
-            'Solo el administrador puede consultar la bitácora.',
-        );
+        $this->requireAdmin('Solo el administrador puede consultar la bitácora.');
 
         // Solo modelos que efectivamente tienen entradas en la bitácora.
         $types = Audit::query()

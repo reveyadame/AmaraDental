@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
 use App\Http\Requests\Specialists\StoreSpecialistRequest;
 use App\Http\Requests\Specialists\UpdateSpecialistRequest;
 use App\Http\Resources\SpecialistResource;
@@ -81,7 +80,7 @@ class SpecialistsController extends Controller implements HasMiddleware
 
     public function destroy(Specialist $specialist): JsonResponse
     {
-        abort_unless(request()->user()?->hasRole(Role::Admin->value), 403);
+        $this->requireAdmin();
 
         // Soft semántico: marca inactivo. La eliminación real bloquearía por
         // restrictOnDelete en commission_payments si tuviera historial.

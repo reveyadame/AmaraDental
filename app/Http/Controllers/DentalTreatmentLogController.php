@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
 use App\Http\Requests\Odontogram\StoreTreatmentLogRequest;
 use App\Http\Resources\DentalTreatmentLogResource;
 use App\Models\DentalTreatmentLog;
@@ -67,7 +66,7 @@ class DentalTreatmentLogController extends Controller implements HasMiddleware
 
     public function destroy(Request $request, Patient $patient, DentalTreatmentLog $logEntry): JsonResponse
     {
-        abort_unless($request->user()?->hasRole(Role::Admin->value), 403);
+        $this->requireAdmin();
         abort_unless($logEntry->patient_id === $patient->id, 404);
 
         $logEntry->delete();

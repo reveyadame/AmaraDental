@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
 use App\Models\ChargeItem;
 use App\Models\ChargePayment;
 use App\Models\CommissionPayment;
@@ -34,11 +33,7 @@ class ChargePaymentsController extends Controller implements HasMiddleware
 
     public function destroy(Request $request, ChargePayment $payment): JsonResponse
     {
-        abort_unless(
-            $request->user()?->hasRole(Role::Admin->value),
-            403,
-            'Solo el administrador puede eliminar pagos.',
-        );
+        $this->requireAdmin('Solo el administrador puede eliminar pagos.');
 
         $session = $payment->cashSession;
         abort_if(

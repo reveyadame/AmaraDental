@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
 use App\Http\Requests\Patients\StoreEndodonticRecordRequest;
 use App\Http\Resources\EndodonticRecordResource;
 use App\Models\EndodonticRecord;
@@ -77,7 +76,7 @@ class EndodonticRecordsController extends Controller implements HasMiddleware
 
     public function destroy(Request $request, Patient $patient, EndodonticRecord $record): JsonResponse
     {
-        abort_unless($request->user()?->hasRole(Role::Admin->value), 403);
+        $this->requireAdmin();
         abort_unless($record->patient_id === $patient->id, 404);
 
         $record->delete();

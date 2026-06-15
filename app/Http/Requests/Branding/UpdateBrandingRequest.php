@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Branding;
 
-use App\Enums\Role;
+use App\Support\Permissions;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateBrandingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasRole(Role::Admin->value) ?? false;
+        // Se gatea por el permiso (no por el rol admin directo) para respetar
+        // la matriz rol→permisos. Hoy `branding.manage` es admin-only, pero si
+        // mañana se concede a otro rol, esto lo respeta sin tocar el request.
+        return $this->user()?->can(Permissions::BRANDING_MANAGE) ?? false;
     }
 
     /** @return array<string, mixed> */
