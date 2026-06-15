@@ -15,6 +15,7 @@ use App\Models\EndodonticRecord;
 use App\Models\LabOrder;
 use App\Models\Membership;
 use App\Models\Patient;
+use App\Support\TenantContext;
 use App\Models\Prescription;
 use App\Models\Quote;
 use App\Models\Recall;
@@ -62,6 +63,13 @@ class PatientsController extends Controller implements HasMiddleware
 
     public function store(StorePatientRequest $request): JsonResponse
     {
+        // Tope de pacientes según el plan de la clínica (null = ilimitado).
+        $max = TenantContext::tenant()->maxPatients();
+        if ($max !== null && Patient::query()->count() >= $max) {
+            abort(422, "Alcanzaste el límite de {$max} pacientes de tu plan. "
+                .'Sube de plan para registrar más.');
+        }
+
         $data = $request->validated();
 
         // Consistencia: si llega como "primera vez" pero ya trae los campos

@@ -15,6 +15,7 @@ import { usePatient } from './hooks'
 import { PatientFormDialog } from './PatientFormDialog'
 import { DeletePatientDialog } from './DeletePatientDialog'
 import { PatientNextAppointment } from './PatientNextAppointmentCard'
+import { PatientPortalButton } from './PatientPortalButton'
 import { useAuth } from '@/shared/auth/permissions'
 import { COUNTRY_LABELS } from './regions'
 import { MARITAL_STATUS_LABELS } from '@/shared/types/patient'
@@ -134,6 +135,7 @@ export function PatientDetailPage() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
+                <PatientPortalButton patient={patient.data} />
                 {canManage ? (
                   <Button variant="outline" onClick={() => setEdit(true)}>
                     <PencilLine className="size-4" /> Editar

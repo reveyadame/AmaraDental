@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { usePrintOnLoad } from '@/shared/lib/use-print-on-load'
+import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
 import { Navigate, useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { usePatient } from '@/features/patients/hooks'
@@ -34,11 +35,7 @@ export function PrintAccountStatementPage() {
 
   const ready = !!patient.data && !!account.data && !patient.isPending && !account.isPending
 
-  useEffect(() => {
-    if (!ready) return
-    const id = window.setTimeout(() => window.print(), 350)
-    return () => window.clearTimeout(id)
-  }, [ready])
+  usePrintOnLoad(ready)
 
   if (!patientId || Number.isNaN(patientId)) return <Navigate to="/pacientes" replace />
 
@@ -68,7 +65,7 @@ export function PrintAccountStatementPage() {
             )}
             <div>
               <p className="text-xl font-semibold leading-tight">
-                {branding?.brand_name ?? 'CIO Dent'}
+                {branding?.brand_name ?? DEFAULT_BRAND_NAME}
               </p>
               {branding?.razon_social ? (
                 <p className="text-xs text-gray-600">{branding.razon_social}</p>
@@ -210,7 +207,7 @@ export function PrintAccountStatementPage() {
         </section>
 
         <footer className="text-[10px] text-gray-500 border-t pt-3">
-          Documento informativo emitido por {branding?.brand_name ?? 'CIO Dent'} el {now}.
+          Documento informativo emitido por {branding?.brand_name ?? DEFAULT_BRAND_NAME} el {now}.
           Este estado de cuenta no constituye comprobante fiscal.
         </footer>
       </div>

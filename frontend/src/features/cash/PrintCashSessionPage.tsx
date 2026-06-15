@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { usePrintOnLoad } from '@/shared/lib/use-print-on-load'
+import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
 import { Navigate, useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useCashSession } from './hooks'
@@ -41,11 +42,7 @@ export function PrintCashSessionPage() {
 
   const ready = !!session.data && !session.isPending
 
-  useEffect(() => {
-    if (!ready) return
-    const t = window.setTimeout(() => window.print(), 350)
-    return () => window.clearTimeout(t)
-  }, [ready])
+  usePrintOnLoad(ready)
 
   if (!id || Number.isNaN(id)) return <Navigate to="/caja" replace />
 
@@ -89,7 +86,7 @@ export function PrintCashSessionPage() {
             )}
             <div>
               <p className="text-xl font-semibold leading-tight">
-                {branding?.brand_name ?? 'CIO Dent'}
+                {branding?.brand_name ?? DEFAULT_BRAND_NAME}
               </p>
               {branding?.address ? (
                 <p className="text-xs text-gray-600">{branding.address}</p>
@@ -269,7 +266,7 @@ export function PrintCashSessionPage() {
         </section>
 
         <footer className="text-[10px] text-gray-500 border-t pt-3 mt-6">
-          Corte generado por {branding?.brand_name ?? 'CIO Dent'} el {now}.
+          Corte generado por {branding?.brand_name ?? DEFAULT_BRAND_NAME} el {now}.
         </footer>
       </div>
 

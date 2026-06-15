@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
 import { Check, Copy, Loader2, RefreshCw } from 'lucide-react'
 import { useIcsFeedToken, useRegenerateIcsFeedToken } from './hooks'
 import { useMe } from '@/features/auth/hooks'
@@ -47,8 +48,8 @@ export function IcsFeedCard() {
           <>
             <p className="text-sm text-muted-foreground">
               Genera tu URL privada para suscribirla en Google Calendar. Mientras tengas tu
-              calendario activo, podrás ver tus citas en Gmail aunque CIO Dent no esté
-              disponible.
+              calendario activo, podrás ver tus citas en Gmail aunque {DEFAULT_BRAND_NAME} no
+              esté disponible.
             </p>
             <Button onClick={generate} disabled={regen.isPending}>
               {regen.isPending ? (

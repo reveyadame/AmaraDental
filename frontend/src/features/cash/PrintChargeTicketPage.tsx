@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { usePrintOnLoad } from '@/shared/lib/use-print-on-load'
+import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
 import { Navigate, useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useCharge } from './hooks'
@@ -50,11 +51,7 @@ export function PrintChargeTicketPage() {
 
   const ready = !!charge.data && !charge.isPending
 
-  useEffect(() => {
-    if (!ready) return
-    const t = window.setTimeout(() => window.print(), 350)
-    return () => window.clearTimeout(t)
-  }, [ready])
+  usePrintOnLoad(ready)
 
   if (!id || Number.isNaN(id)) return <Navigate to="/caja" replace />
 
@@ -96,7 +93,7 @@ export function PrintChargeTicketPage() {
             />
           ) : null}
           <p className="font-bold text-[13px]">
-            {branding?.brand_name ?? 'CIO Dent'}
+            {branding?.brand_name ?? DEFAULT_BRAND_NAME}
           </p>
           {showAddress && branding?.address ? (
             <p className="text-[10px]">{branding.address}</p>

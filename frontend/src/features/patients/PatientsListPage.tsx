@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { usePatients } from './hooks'
 import { PatientFormDialog } from './PatientFormDialog'
+import { PatientLimitBanner } from '@/features/subscription/PatientLimitBanner'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Card } from '@/shared/ui/card'
@@ -61,6 +62,8 @@ export function PatientsListPage() {
           </Button>
         ) : null}
       </header>
+
+      <PatientLimitBanner />
 
       <Card className="p-4">
         <div className="relative max-w-sm">

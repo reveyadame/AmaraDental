@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
 use App\Http\Resources\ConsentTemplateResource;
 use App\Models\ConsentTemplate;
 use App\Support\Permissions;
@@ -67,7 +66,7 @@ class ConsentTemplatesController extends Controller implements HasMiddleware
 
     public function destroy(Request $request, ConsentTemplate $template): JsonResponse
     {
-        abort_unless($request->user()?->hasRole(Role::Admin->value), 403);
+        $this->requireAdmin();
         $template->delete();
 
         return response()->json(['message' => 'OK']);

@@ -37,6 +37,7 @@ import { QuotesPage } from '@/pages/QuotesPage'
 import { QuoteFormPage } from '@/features/quotes/QuoteFormPage'
 import { QuoteDetailPage } from '@/features/quotes/QuoteDetailPage'
 import { PrintQuotePage } from '@/features/quotes/PrintQuotePage'
+import { PlatformApp } from '@/features/platform/PlatformApp'
 import { ProtectedRoute } from './ProtectedRoute'
 import { AppShell } from './AppShell'
 
@@ -52,6 +53,9 @@ export function Router() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Panel de plataforma (super-admin) — aislado del shell de clínica. */}
+      <Route path="/plataforma" element={<PlatformApp />} />
       <Route path="/" element={<Shell><DashboardPage /></Shell>} />
       <Route path="/pacientes" element={<Shell><PatientsListPage /></Shell>} />
       <Route path="/pacientes/:id" element={<Shell><PatientDetailPage /></Shell>} />

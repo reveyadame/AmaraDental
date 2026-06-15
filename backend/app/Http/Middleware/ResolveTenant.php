@@ -11,24 +11,97 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Fase single-tenant: siempre resolvemos tenant_id = 1.
+ * Resuelve el tenant activo del request, en este orden:
  *
- * Fase SaaS multi-tenant (futuro): reemplazar la lógica de resolución
- * por una basada en subdominio (`$request->getHost()`), header
- * (`X-Tenant`), o claim del token Sanctum. El resto del código no cambia.
+ *   1. Header explícito (`X-Tenant: <slug>`) — app móvil / API / tests.
+ *   2. Subdominio (`clinica-x.ciodent.mx` → slug `clinica-x`) — solo si hay
+ *      `tenancy.central_domains` configurados.
+ *   3. Tenant por defecto (`tenancy.default_tenant_id`) — fase single-tenant.
+ *
+ * Si se pidió un tenant explícito (header/subdominio) y no existe → 404.
+ * Sin header ni subdominio de tenant → cae al default, dejando intacto el
+ * comportamiento actual de producción.
+ *
+ * La verificación de que el USUARIO autenticado pertenece a este tenant la
+ * hace EnsureTenantMatchesUser (corre después de auth).
  */
 class ResolveTenant
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $tenant = Tenant::query()->find(1);
+        $tenant = $this->resolve($request);
 
-        if (! $tenant) {
-            abort(503, 'Tenant base no configurado. Ejecuta `php artisan db:seed --class=TenantSeeder`.');
-        }
+        abort_if($tenant === null, 404, 'Clínica no encontrada.');
+
+        // Clínica suspendida → bloqueada para todo lo de cara al usuario. Las
+        // rutas de plataforma (super-admin) sí pueden operar sobre suspendidas.
+        abort_if(
+            ! $tenant->isActive() && ! $request->is('api/platform/*'),
+            403,
+            'Esta clínica está suspendida. Contacta a Amara Dental.',
+        );
 
         TenantContext::setTenant($tenant);
 
         return $next($request);
+    }
+
+    private function resolve(Request $request): ?Tenant
+    {
+        // 1. Header explícito — tiene prioridad. Si se manda y no existe, 404.
+        $slug = $request->header((string) config('tenancy.header'));
+        if (is_string($slug) && $slug !== '') {
+            return $this->findBySlug($slug);
+        }
+
+        // 2. Subdominio — solo si hay dominios centrales configurados.
+        $sub = $this->subdomainFor($request->getHost());
+        if ($sub !== null) {
+            return $this->findBySlug($sub);
+        }
+
+        // 3. Fallback fase single-tenant: tenant por defecto.
+        return Tenant::query()->find((int) config('tenancy.default_tenant_id'));
+    }
+
+    private function findBySlug(string $slug): ?Tenant
+    {
+        return Tenant::query()->where('slug', strtolower(trim($slug)))->first();
+    }
+
+    /**
+     * Devuelve el slug del subdominio si el host pertenece a un dominio
+     * central; null si no aplica (apex, dominio ajeno, subdominio reservado,
+     * o sin dominios centrales configurados).
+     */
+    private function subdomainFor(string $host): ?string
+    {
+        $host = strtolower($host);
+        $reserved = (array) config('tenancy.reserved_subdomains', []);
+
+        foreach ((array) config('tenancy.central_domains') as $central) {
+            $central = strtolower(trim((string) $central));
+            if ($central === '') {
+                continue;
+            }
+
+            if ($host === $central) {
+                return null; // apex del SaaS → sin tenant por subdominio
+            }
+
+            if (str_ends_with($host, '.'.$central)) {
+                // Toma solo el primer label: "clinica-x.app.ciodent.mx" → "clinica-x".
+                $prefix = substr($host, 0, -(strlen($central) + 1));
+                $sub = explode('.', $prefix)[0] ?? '';
+
+                if ($sub !== '' && ! in_array($sub, $reserved, true)) {
+                    return $sub;
+                }
+
+                return null;
+            }
+        }
+
+        return null;
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
 use App\Http\Requests\Patients\StoreConsentRequest;
 use App\Http\Resources\ConsentResource;
 use App\Models\Consent;
@@ -67,7 +66,7 @@ class ConsentsController extends Controller implements HasMiddleware
 
     public function destroy(Patient $patient, Consent $consent, Request $request): JsonResponse
     {
-        abort_unless($request->user()?->hasRole(Role::Admin->value), 403);
+        $this->requireAdmin();
         abort_unless($consent->patient_id === $patient->id, 404);
 
         $consent->delete();

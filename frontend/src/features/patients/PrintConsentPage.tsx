@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { usePrintOnLoad } from '@/shared/lib/use-print-on-load'
+import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
 import { Navigate, useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { usePatient, useConsent } from './hooks'
@@ -37,11 +38,7 @@ export function PrintConsentPage() {
   const ready =
     !!patient.data && !!consent.data && !patient.isPending && !consent.isPending
 
-  useEffect(() => {
-    if (!ready) return
-    const id = window.setTimeout(() => window.print(), 350)
-    return () => window.clearTimeout(id)
-  }, [ready])
+  usePrintOnLoad(ready)
 
   if (!patientId || !consentId || Number.isNaN(patientId) || Number.isNaN(consentId)) {
     return <Navigate to="/pacientes" replace />
@@ -76,7 +73,7 @@ export function PrintConsentPage() {
             )}
             <div>
               <p className="text-xl font-semibold leading-tight">
-                {branding?.brand_name ?? 'CIO Dent'}
+                {branding?.brand_name ?? DEFAULT_BRAND_NAME}
               </p>
               {branding?.razon_social ? (
                 <p className="text-xs text-gray-600">{branding.razon_social}</p>
@@ -170,7 +167,7 @@ export function PrintConsentPage() {
         </section>
 
         <footer className="text-[10px] text-gray-500 border-t pt-3 mt-6">
-          Documento generado por {branding?.brand_name ?? 'CIO Dent'} el {now}. Conforme a la
+          Documento generado por {branding?.brand_name ?? DEFAULT_BRAND_NAME} el {now}. Conforme a la
           NOM-004-SSA3-2012 (expediente clínico). Conserve este documento.
         </footer>
       </div>

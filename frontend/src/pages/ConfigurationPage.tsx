@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
 import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -17,9 +18,10 @@ import { FONT_OPTIONS, getFont } from '@/shared/theme/fonts'
 import type { FontFamilyKey } from '@/shared/types/api'
 import { useUpdateBranding } from '@/features/branding/hooks'
 import { useBranding as useBrandingQuery } from '@/features/auth/hooks'
-import { useMe } from '@/features/auth/hooks'
+import { useAuth } from '@/shared/auth/permissions'
 import { TagListInput } from '@/features/patients/TagListInput'
 import { fileToResizedDataUrl, inferForeground as inferFg } from '@/shared/lib/image'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
@@ -27,6 +29,7 @@ import { Textarea } from '@/shared/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { accent } from '@/shared/lib/module-accents'
+import { SubscriptionCard } from '@/features/subscription/SubscriptionCard'
 import {
   Select,
   SelectContent,
@@ -100,8 +103,7 @@ function ColorField({ label, value, onChange, helper }: ColorFieldProps) {
 }
 
 export function ConfigurationPage() {
-  const { data: me } = useMe()
-  const isAdmin = me?.roles.includes('admin') ?? false
+  const { isAdmin } = useAuth()
   const branding = useBrandingQuery()
   const update = useUpdateBranding()
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -251,14 +253,7 @@ export function ConfigurationPage() {
       {
         onSuccess: () => toast.success('Configuración guardada — aplicada en vivo'),
         onError: (err: unknown) => {
-          const errs =
-            err && typeof err === 'object' && 'response' in err
-              ? (err as {
-                  response?: { data?: { errors?: Record<string, string[]>; message?: string } }
-                }).response?.data
-              : undefined
-          const first = errs?.errors ? Object.values(errs.errors)[0]?.[0] : errs?.message
-          toast.error(first ?? 'No fue posible guardar')
+          toast.error(getApiErrorMessage(err, 'No fue posible guardar'))
         },
       },
     )
@@ -339,6 +334,7 @@ export function ConfigurationPage() {
               <TabsTrigger value="info">Información</TabsTrigger>
               <TabsTrigger value="tickets">Impresión</TabsTrigger>
               <TabsTrigger value="system">Sistema</TabsTrigger>
+              <TabsTrigger value="plan">Plan</TabsTrigger>
             </TabsList>
 
             <TabsContent value="branding" className="space-y-6">
@@ -640,7 +636,7 @@ export function ConfigurationPage() {
                   Vista previa
                 </p>
                 <p className="text-2xl font-semibold">
-                  {brandName || 'CIO Dent'}
+                  {brandName || DEFAULT_BRAND_NAME}
                 </p>
                 <p className="text-sm">
                   Receta para María González — Amoxicilina 500 mg. Tomar 1
@@ -1049,6 +1045,10 @@ export function ConfigurationPage() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="plan" className="space-y-6">
+              <SubscriptionCard />
             </TabsContent>
           </Tabs>
 

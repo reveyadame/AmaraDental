@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { usePrintOnLoad } from '@/shared/lib/use-print-on-load'
+import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
 import { Navigate, useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { usePrescription } from './hooks'
@@ -52,11 +53,7 @@ export function PrintPrescriptionPage() {
 
   const ready = !!rx.data && !rx.isPending
 
-  useEffect(() => {
-    if (!ready) return
-    const t = window.setTimeout(() => window.print(), 350)
-    return () => window.clearTimeout(t)
-  }, [ready])
+  usePrintOnLoad(ready)
 
   if (!id || Number.isNaN(id)) return <Navigate to="/pacientes" replace />
 
@@ -132,7 +129,7 @@ export function PrintPrescriptionPage() {
                 )}
                 <div>
                   <p className={`${titleSize} font-semibold leading-tight`}>
-                    {branding?.brand_name ?? 'CIO Dent'}
+                    {branding?.brand_name ?? DEFAULT_BRAND_NAME}
                   </p>
                   {branding?.razon_social ? (
                     <p className="text-[10px] text-gray-600">{branding.razon_social}</p>

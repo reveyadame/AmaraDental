@@ -22,8 +22,10 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
-        <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
-        <!-- <env name="DB_DATABASE" value=":memory:"/> -->
+        <!-- La conexión de pruebas se fija en tests/TestCase.php (MySQL
+             `ciodent_testing`), porque el override por env aquí no gana sobre
+             el DB_CONNECTION que docker-compose fija en el contenedor. -->
+        <env name="DB_FOREIGN_KEYS" value="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
