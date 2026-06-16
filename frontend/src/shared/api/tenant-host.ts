@@ -31,3 +31,16 @@ export function isPlatformHost(): boolean {
 
   return window.location.hostname.toLowerCase() === 'admin.' + central
 }
+
+/**
+ * True cuando el frontend se sirve en el apex (`amaradental.mx`) o `www`:
+ * ahí va la landing pública con el alta self-service, no la app de clínica.
+ * En dev (sin VITE_CENTRAL_DOMAIN) es false.
+ */
+export function isLandingHost(): boolean {
+  const central = import.meta.env.VITE_CENTRAL_DOMAIN
+  if (!central) return false
+
+  const host = window.location.hostname.toLowerCase()
+  return host === central || host === 'www.' + central
+}

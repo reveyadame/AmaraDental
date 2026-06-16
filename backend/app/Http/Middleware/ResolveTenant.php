@@ -31,10 +31,12 @@ class ResolveTenant
     {
         $tenant = $this->resolve($request);
 
-        // Las rutas de plataforma (super-admin) operan por ENCIMA de los tenants:
-        // funcionan aunque no haya tenant resuelto (admin.amaradental.mx, o un
-        // SaaS recién desplegado sin tenant por defecto) y sobre suspendidas.
-        if ($request->is('api/platform/*')) {
+        // Rutas que operan por ENCIMA de los tenants y funcionan aunque no haya
+        // tenant resuelto (admin.amaradental.mx o el apex con la landing pública,
+        // o un SaaS recién desplegado sin tenant por defecto) y sobre suspendidas:
+        //   - api/platform/* → panel super-admin
+        //   - api/public/*   → alta self-service desde la landing
+        if ($request->is('api/platform/*') || $request->is('api/public/*')) {
             if ($tenant !== null) {
                 TenantContext::setTenant($tenant);
             }
