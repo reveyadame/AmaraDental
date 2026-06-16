@@ -293,6 +293,7 @@ Route::prefix('platform')->group(function (): void {
         Route::post('tenants', [PlatformTenantsController::class, 'store']);
         Route::get('tenants/{tenant}', [PlatformTenantsController::class, 'show']);
         Route::patch('tenants/{tenant}', [PlatformTenantsController::class, 'update']);
+        Route::post('tenants/{tenant}/reset-admin-password', [PlatformTenantsController::class, 'resetAdminPassword']);
         Route::delete('tenants/{tenant}', [PlatformTenantsController::class, 'destroy']);
 
         // Gestión de super-admins.

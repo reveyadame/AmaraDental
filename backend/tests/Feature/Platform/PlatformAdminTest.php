@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Platform;
 
+use App\Mail\ClinicCredentialsResetMail;
 use App\Models\PatientAccount;
 use App\Models\Patient;
 use App\Models\Plan;
@@ -12,6 +13,8 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 /**
@@ -296,6 +299,37 @@ class PlatformAdminTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseMissing('platform_admins', ['id' => $victim->id]);
+    }
+
+    // ── Reset de contraseña del admin de la clínica ────────────────────────
+
+    public function test_reset_admin_password_regenerates_and_emails(): void
+    {
+        Mail::fake();
+        $token = $this->platformToken();
+        $created = $this->withToken($token)->postJson('/api/platform/tenants', [
+            'name' => 'Clínica Pass',
+            'admin_email' => 'admin@pass.mx',
+        ])->assertCreated()->json('data');
+
+        $res = $this->withToken($token)
+            ->postJson("/api/platform/tenants/{$created['id']}/reset-admin-password")
+            ->assertOk()
+            ->assertJsonPath('admin_email', 'admin@pass.mx')
+            ->assertJsonPath('email_sent', true);
+
+        $newPassword = $res->json('admin_password');
+        $this->assertNotEmpty($newPassword);
+
+        Mail::assertSent(
+            ClinicCredentialsResetMail::class,
+            fn (ClinicCredentialsResetMail $m) => $m->hasTo('admin@pass.mx'),
+        );
+
+        // La nueva contraseña quedó aplicada al admin de esa clínica.
+        TenantContext::setTenant(Tenant::query()->find($created['id']));
+        $admin = User::query()->orderBy('id')->first();
+        $this->assertTrue(Hash::check($newPassword, $admin->password));
     }
 
     // ── Borrado completo de clínica ────────────────────────────────────────

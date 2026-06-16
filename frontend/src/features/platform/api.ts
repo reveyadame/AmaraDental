@@ -168,6 +168,19 @@ export async function deleteTenant(id: number, confirmSlug: string): Promise<voi
   })
 }
 
+export interface ResetAdminPasswordResult {
+  admin_email: string
+  admin_password: string
+  email_sent: boolean
+}
+
+export async function resetTenantAdminPassword(id: number): Promise<ResetAdminPasswordResult> {
+  const { data } = await platformApi.post<ResetAdminPasswordResult>(
+    `/api/platform/tenants/${id}/reset-admin-password`,
+  )
+  return data
+}
+
 // ── Planes ───────────────────────────────────────────────────────────────────
 
 export async function listPlans(): Promise<PlatformPlanFull[]> {

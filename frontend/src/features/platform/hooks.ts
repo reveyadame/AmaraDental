@@ -13,6 +13,7 @@ import {
   platformLogin,
   platformLogout,
   platformMe,
+  resetTenantAdminPassword,
   updateAdmin,
   updatePlan,
   updateTenant,
@@ -108,6 +109,12 @@ export function useUpdateTenant() {
       qc.invalidateQueries({ queryKey: tenantsKey })
       qc.invalidateQueries({ queryKey: statsKey })
     },
+  })
+}
+
+export function useResetTenantAdminPassword() {
+  return useMutation({
+    mutationFn: (id: number) => resetTenantAdminPassword(id),
   })
 }
 
