@@ -6,9 +6,11 @@ namespace Tests\Feature\Platform;
 
 use App\Models\PatientAccount;
 use App\Models\Patient;
+use App\Models\Plan;
 use App\Models\PlatformAdmin;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -208,5 +210,140 @@ class PlatformAdminTest extends TestCase
         ])->assertOk()
             ->assertJsonPath('data.plan.key', 'premium')
             ->assertJsonPath('data.plan.includes_app', true);
+    }
+
+    public function test_platform_admin_can_edit_a_plan(): void
+    {
+        $token = $this->platformToken();
+        $planId = Plan::query()->where('key', 'esencial')->value('id');
+
+        $this->withToken($token)->patchJson("/api/platform/plans/{$planId}", [
+            'max_patients' => 500,
+            'price_mxn' => 599,
+            'includes_app' => true,
+        ])->assertOk()
+            ->assertJsonPath('data.max_patients', 500)
+            ->assertJsonPath('data.price_mxn', 599)
+            ->assertJsonPath('data.includes_app', true);
+
+        $this->assertDatabaseHas('plans', ['key' => 'esencial', 'max_patients' => 500, 'price_mxn' => 599]);
+    }
+
+    // ── Dashboard / stats ──────────────────────────────────────────────────
+
+    public function test_stats_returns_aggregates(): void
+    {
+        $token = $this->platformToken();
+
+        $data = $this->withToken($token)->getJson('/api/platform/stats')
+            ->assertOk()
+            ->json('data');
+
+        $this->assertArrayHasKey('totals', $data);
+        $this->assertArrayHasKey('by_plan', $data);
+        $this->assertArrayHasKey('by_subscription', $data);
+        $this->assertCount(12, $data['growth']); // 12 meses
+        $this->assertGreaterThanOrEqual(1, $data['totals']['tenants']); // al menos la piloto
+    }
+
+    // ── Gestión de super-admins ────────────────────────────────────────────
+
+    public function test_can_create_list_and_update_admins(): void
+    {
+        $token = $this->platformToken();
+
+        $newId = $this->withToken($token)->postJson('/api/platform/admins', [
+            'name' => 'Soporte',
+            'email' => 'soporte@amaradental.mx',
+            'password' => 'secret123',
+        ])->assertCreated()->json('data.id');
+
+        $emails = collect($this->withToken($token)->getJson('/api/platform/admins')->json('data'))
+            ->pluck('email')->all();
+        $this->assertContains('soporte@amaradental.mx', $emails);
+
+        // Editar: cambiar nombre y desactivar (no es el último activo).
+        $this->withToken($token)->patchJson("/api/platform/admins/{$newId}", [
+            'name' => 'Soporte 2',
+            'active' => false,
+        ])->assertOk()->assertJsonPath('data.active', false);
+
+        // Login con la contraseña sembrada debe funcionar... pero está inactivo.
+        $this->postJson('/api/platform/auth/login', [
+            'email' => 'soporte@amaradental.mx',
+            'password' => 'secret123',
+        ])->assertStatus(422);
+    }
+
+    public function test_admin_cannot_delete_or_deactivate_self(): void
+    {
+        $admin = PlatformAdmin::factory()->create();
+        $token = $admin->createToken('test', ['platform'])->plainTextToken;
+
+        $this->withToken($token)->deleteJson("/api/platform/admins/{$admin->id}")
+            ->assertStatus(422);
+
+        $this->withToken($token)->patchJson("/api/platform/admins/{$admin->id}", ['active' => false])
+            ->assertStatus(422);
+    }
+
+    public function test_can_delete_another_admin(): void
+    {
+        $token = $this->platformToken(); // admin A (activo)
+        $victim = PlatformAdmin::factory()->create();
+
+        $this->withToken($token)->deleteJson("/api/platform/admins/{$victim->id}")
+            ->assertOk();
+
+        $this->assertDatabaseMissing('platform_admins', ['id' => $victim->id]);
+    }
+
+    // ── Borrado completo de clínica ────────────────────────────────────────
+
+    public function test_delete_tenant_requires_matching_slug(): void
+    {
+        $token = $this->platformToken();
+        $id = $this->withToken($token)->postJson('/api/platform/tenants', [
+            'name' => 'Clínica Borrar',
+            'admin_email' => 'admin@borrar.mx',
+        ])->json('data.id');
+
+        // Slug equivocado → 422, no borra.
+        $this->withToken($token)->deleteJson("/api/platform/tenants/{$id}", [
+            'confirm_slug' => 'otro-slug',
+        ])->assertStatus(422);
+
+        $this->assertDatabaseHas('tenants', ['id' => $id]);
+    }
+
+    public function test_delete_tenant_purges_all_its_data(): void
+    {
+        $token = $this->platformToken();
+        $created = $this->withToken($token)->postJson('/api/platform/tenants', [
+            'name' => 'Clínica Purga',
+            'admin_email' => 'admin@purga.mx',
+        ])->assertCreated()->json('data');
+
+        $tenantId = $created['id'];
+        $slug = $created['slug'];
+
+        // Agrega un paciente dentro del contexto de esa clínica.
+        $piloto = TenantContext::tenant(); // la clínica piloto fijada en setUp
+        $tenant = Tenant::query()->find($tenantId);
+        TenantContext::setTenant($tenant);
+        $patient = Patient::factory()->create();
+        TenantContext::setTenant($piloto); // restaura la piloto
+
+        $this->assertDatabaseHas('patients', ['id' => $patient->id]);
+        $this->assertDatabaseHas('users', ['tenant_id' => $tenantId]);
+
+        // Borrado con slug correcto.
+        $this->withToken($token)->deleteJson("/api/platform/tenants/{$tenantId}", [
+            'confirm_slug' => $slug,
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('tenants', ['id' => $tenantId]);
+        $this->assertDatabaseMissing('users', ['tenant_id' => $tenantId]);
+        $this->assertDatabaseMissing('patients', ['id' => $patient->id]);
     }
 }

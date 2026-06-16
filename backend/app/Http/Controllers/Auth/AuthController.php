@@ -29,6 +29,10 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
+        // Registra el último acceso (alimenta "actividad" de la clínica en el
+        // panel de plataforma). updateQuietly: no dispara auditoría por un login.
+        $request->user()->forceFill(['last_login_at' => now()])->saveQuietly();
+
         return response()->json([
             'data' => UserResource::make($request->user()),
         ]);

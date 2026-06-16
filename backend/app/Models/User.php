@@ -25,6 +25,7 @@ class User extends Authenticatable implements Auditable
         'phone',
         'password',
         'active',
+        'last_login_at',
         'ics_feed_token',
         'ics_feed_token_at',
     ];
@@ -41,6 +42,7 @@ class User extends Authenticatable implements Auditable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'active' => 'boolean',
+            'last_login_at' => 'datetime',
             'ics_feed_token_at' => 'datetime',
         ];
     }

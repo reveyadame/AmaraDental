@@ -1,14 +1,19 @@
 import { useEffect, useReducer } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { getPlatformToken } from '@/shared/api/platform-client'
 import { usePlatformMe } from './hooks'
 import { PlatformLoginPage } from './PlatformLoginPage'
 import { PlatformShell } from './PlatformShell'
+import { PlatformDashboardPage } from './PlatformDashboardPage'
 import { ClinicsPage } from './ClinicsPage'
+import { PlansPage } from './PlansPage'
+import { AdminsPage } from './AdminsPage'
 
 /**
  * Raíz del panel de plataforma (super-admin). Auth aislada por token:
- * sin token o sesión inválida → login; con sesión válida → shell + clínicas.
+ * sin token o sesión inválida → login; con sesión válida → shell + secciones.
+ * La navegación es por rutas internas (Dashboard / Clínicas / Planes / Admins).
  */
 export function PlatformApp() {
   const me = usePlatformMe()
@@ -34,8 +39,14 @@ export function PlatformApp() {
   if (me.isError || !me.data) return <PlatformLoginPage />
 
   return (
-    <PlatformShell admin={me.data}>
-      <ClinicsPage />
-    </PlatformShell>
+    <Routes>
+      <Route element={<PlatformShell admin={me.data} />}>
+        <Route index element={<PlatformDashboardPage />} />
+        <Route path="clinicas" element={<ClinicsPage />} />
+        <Route path="planes" element={<PlansPage />} />
+        <Route path="administradores" element={<AdminsPage adminId={me.data.id} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
   )
 }

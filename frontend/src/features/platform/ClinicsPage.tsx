@@ -1,14 +1,24 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Building2, Eye, Loader2, Power, PowerOff } from 'lucide-react'
+import { Building2, Eye, Loader2, MoreHorizontal, Power, PowerOff, Trash2 } from 'lucide-react'
 import { usePlans, useTenants, useUpdateTenant } from './hooks'
 import { NewClinicDialog } from './NewClinicDialog'
 import { ClinicDetailDialog } from './ClinicDetailDialog'
+import { DeleteClinicDialog } from './DeleteClinicDialog'
+import { BillingStateBadge, UsageBar } from './clinic-ui'
+import { relativeFrom } from './clinic-format'
 import { useConfirm } from '@/shared/ui/confirm'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/shared/ui/dropdown-menu'
 import {
   Select,
   SelectContent,
@@ -32,6 +42,7 @@ export function ClinicsPage() {
   const update = useUpdateTenant()
   const confirm = useConfirm()
   const [detailId, setDetailId] = useState<number | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<PlatformTenant | null>(null)
 
   const changePlan = (t: PlatformTenant, key: string) => {
     if (key === t.plan?.key) return
@@ -86,24 +97,33 @@ export function ClinicsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Clínica</TableHead>
-                <TableHead>Subdominio</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Uso</TableHead>
+                <TableHead>Pago</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Alta</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {tenants.data.map((t) => (
                 <TableRow key={t.id}>
-                  <TableCell className="font-medium">{t.name}</TableCell>
-                  <TableCell className="font-mono text-sm text-muted-foreground">{t.slug}</TableCell>
+                  <TableCell>
+                    <button
+                      className="text-left font-medium hover:underline"
+                      onClick={() => setDetailId(t.id)}
+                    >
+                      {t.name}
+                    </button>
+                    <p className="font-mono text-xs text-muted-foreground">{t.slug}</p>
+                  </TableCell>
                   <TableCell>
                     <Select
                       value={t.plan?.key ?? ''}
                       onValueChange={(key) => changePlan(t, key)}
                       disabled={update.isPending}
                     >
-                      <SelectTrigger className="h-8 w-[150px]">
+                      <SelectTrigger className="h-8 w-[140px]">
                         <SelectValue placeholder="Sin plan" />
                       </SelectTrigger>
                       <SelectContent>
@@ -116,37 +136,49 @@ export function ClinicsPage() {
                     </Select>
                   </TableCell>
                   <TableCell>
+                    <UsageBar usage={t.usage} />
+                  </TableCell>
+                  <TableCell>
+                    {t.billing_lite ? <BillingStateBadge state={t.billing_lite.state} /> : '—'}
+                  </TableCell>
+                  <TableCell>
                     {t.status === 'active' ? (
                       <Badge variant="secondary">Activa</Badge>
                     ) : (
                       <Badge variant="destructive">Suspendida</Badge>
                     )}
                   </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {relativeFrom(t.created_at)}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => setDetailId(t.id)}>
-                        <Eye className="size-4" /> Ver
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => toggle(t)}
-                        disabled={update.isPending}
-                        className={
-                          t.status === 'active' ? 'text-destructive hover:text-destructive' : ''
-                        }
-                      >
-                        {t.status === 'active' ? (
-                          <>
-                            <PowerOff className="size-4" /> Suspender
-                          </>
-                        ) : (
-                          <>
-                            <Power className="size-4" /> Reactivar
-                          </>
-                        )}
-                      </Button>
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="icon" variant="ghost" className="size-8">
+                          <MoreHorizontal className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setDetailId(t.id)}>
+                          <Eye className="size-4" /> Ver detalle
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => toggle(t)}>
+                          {t.status === 'active' ? (
+                            <>
+                              <PowerOff className="size-4" /> Suspender
+                            </>
+                          ) : (
+                            <>
+                              <Power className="size-4" /> Reactivar
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(t)}>
+                          <Trash2 className="size-4" /> Eliminar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -164,6 +196,18 @@ export function ClinicsPage() {
         tenantId={detailId}
         onOpenChange={(open) => {
           if (!open) setDetailId(null)
+        }}
+        onRequestDelete={(t) => {
+          setDetailId(null)
+          setDeleteTarget(t)
+        }}
+      />
+
+      <DeleteClinicDialog
+        tenant={deleteTarget}
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
         }}
       />
     </div>

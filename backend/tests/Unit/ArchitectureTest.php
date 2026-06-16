@@ -32,12 +32,17 @@ final class ArchitectureTest extends TestCase
         // El trait que DEFINE la tenancy; solo menciona withoutGlobalScope en su
         // docblock para documentar el escape hatch. Es la infra de tenancy misma.
         'BelongsToTenant.php',
+        // Dashboard de plataforma: cuenta pacientes/usuarios de TODAS las clínicas
+        // a propósito (métrica agregada cross-tenant del super-admin). Solo conteos.
+        'StatsController.php',
     ];
 
     /** Archivos (basename) autorizados a usar DB::table(). */
     private const ALLOWED_DB_TABLE = [
-        // (vacío) — ningún archivo de app/ debe usar DB::table().
-        // Los seeders viven en database/seeders/, fuera de este escaneo.
+        // Borrado completo de una clínica: purga por tenant_id en cada tabla con
+        // las FK desactivadas. Es infraestructura cross-tenant del super-admin;
+        // Eloquent (con Global Scope) no puede borrar datos de otro tenant.
+        'DeleteTenant.php',
     ];
 
     public function test_no_raw_db_table_calls_in_app(): void
