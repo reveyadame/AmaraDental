@@ -38,6 +38,7 @@ import { QuoteFormPage } from '@/features/quotes/QuoteFormPage'
 import { QuoteDetailPage } from '@/features/quotes/QuoteDetailPage'
 import { PrintQuotePage } from '@/features/quotes/PrintQuotePage'
 import { PlatformApp } from '@/features/platform/PlatformApp'
+import { isPlatformHost } from '@/shared/api/tenant-host'
 import { ProtectedRoute } from './ProtectedRoute'
 import { AppShell } from './AppShell'
 
@@ -50,6 +51,16 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 export function Router() {
+  // En admin.<central> el sitio ES el panel de plataforma: cualquier ruta lo
+  // monta (maneja su propio login por token). Las clínicas nunca llegan aquí.
+  if (isPlatformHost()) {
+    return (
+      <Routes>
+        <Route path="*" element={<PlatformApp />} />
+      </Routes>
+    )
+  }
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />

@@ -18,3 +18,16 @@ export function tenantSlugFromHost(): string | null {
   const sub = host.slice(0, -(central.length + 1)).split('.')[0]
   return sub && !RESERVED.includes(sub) ? sub : null
 }
+
+/**
+ * True cuando el frontend se sirve en `admin.<central>` (panel super-admin).
+ * En ese host la app monta la plataforma en la raíz, no la app de clínica.
+ * En dev (sin VITE_CENTRAL_DOMAIN) siempre es false → la plataforma vive en
+ * la ruta `/plataforma`.
+ */
+export function isPlatformHost(): boolean {
+  const central = import.meta.env.VITE_CENTRAL_DOMAIN
+  if (!central) return false
+
+  return window.location.hostname.toLowerCase() === 'admin.' + central
+}
