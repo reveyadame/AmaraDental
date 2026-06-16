@@ -10,6 +10,7 @@ use App\Models\Patient;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\BillingInfo;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -70,7 +71,10 @@ class TenantsController extends Controller
 
     public function show(Tenant $tenant): JsonResponse
     {
-        return response()->json(['data' => $this->summary($tenant, withCounts: true)]);
+        $data = $this->summary($tenant, withCounts: true);
+        $data['billing'] = BillingInfo::for($tenant); // estado, renovación, facturas
+
+        return response()->json(['data' => $data]);
     }
 
     public function update(Request $request, Tenant $tenant): JsonResponse

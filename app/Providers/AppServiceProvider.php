@@ -3,9 +3,14 @@
 namespace App\Providers;
 
 use App\Enums\Role;
+use App\Listeners\SendPaymentFailedNotification;
+use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Cashier\Cashier;
+use Laravel\Cashier\Events\WebhookReceived;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,5 +32,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function (User $user, string $ability) {
             return $user->hasRole(Role::Admin->value) ? true : null;
         });
+
+        // El billable de Cashier es la clínica (Tenant), no User: la clínica le
+        // paga la suscripción a Amara Dental.
+        Cashier::useCustomerModel(Tenant::class);
+
+        // Aviso de pago fallido al admin de la clínica.
+        Event::listen(WebhookReceived::class, SendPaymentFailedNotification::class);
     }
 }

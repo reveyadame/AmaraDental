@@ -54,6 +54,11 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // URL del frontend para redirecciones post-Stripe (checkout/portal). En
+    // prod (mismo origen) déjala vacía → se usa el host del request (subdominio
+    // de la clínica). En dev apunta al SPA de Vite.
+    'frontend_url' => env('FRONTEND_URL'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

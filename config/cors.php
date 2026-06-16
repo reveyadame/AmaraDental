@@ -16,7 +16,14 @@ return [
         explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173'))
     ),
 
-    'allowed_origins_patterns' => [],
+    /*
+     * En producción, cada clínica vive en un subdominio de amaradental.mx, así
+     * que no se pueden listar todos: se usa un patrón regex configurable, ej.
+     * CORS_ALLOWED_ORIGIN_PATTERNS=#^https://([a-z0-9-]+\.)?amaradental\.mx$#
+     */
+    'allowed_origins_patterns' => array_filter(
+        explode(',', (string) env('CORS_ALLOWED_ORIGIN_PATTERNS', ''))
+    ),
 
     'allowed_headers' => ['*'],
 

@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Enums\Role as RoleEnum;
+use App\Mail\ClinicWelcomeMail;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\TenantContext;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
@@ -64,6 +67,9 @@ class ProvisionTenant
                 'slug' => $slug,
                 'status' => Tenant::STATUS_ACTIVE,
                 'plan_id' => $planId,
+                // Periodo de prueba gratis: la clínica usa el sistema sin cobro
+                // hasta que termina, cuando debe registrar tarjeta (checkout).
+                'trial_ends_at' => now()->addDays(14),
                 'brand_name' => $name,
                 'color_primary' => 'oklch(0.546 0.215 262.881)',
                 'color_primary_foreground' => 'oklch(0.985 0 0)',
@@ -93,6 +99,23 @@ class ProvisionTenant
             TenantContext::setTenant($previous);
         } else {
             TenantContext::clear();
+        }
+
+        // Email de bienvenida (no debe romper el alta si el correo falla).
+        try {
+            Mail::to($adminEmail)->send(new ClinicWelcomeMail(
+                tenant: $tenant,
+                adminEmail: $adminEmail,
+                password: $generated ? $password : null,
+                loginUrl: $tenant->appUrl(),
+                planName: $tenant->plan?->name,
+                trialEndsAt: $tenant->trial_ends_at?->toIso8601String(),
+            ));
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo enviar el correo de bienvenida de la clínica', [
+                'tenant_id' => $tenant->id,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return ['tenant' => $tenant, 'password' => $password, 'generated' => $generated];

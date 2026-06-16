@@ -18,6 +18,7 @@ class Plan extends Model
         'name',
         'max_patients',
         'includes_app',
+        'stripe_price_id',
         'sort_order',
     ];
 
