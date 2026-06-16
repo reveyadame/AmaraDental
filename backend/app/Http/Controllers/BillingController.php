@@ -59,9 +59,9 @@ class BillingController extends Controller
             'Tu plan no tiene un precio configurado en Stripe. Contacta a Amara Dental.',
         );
 
-        // En prod (mismo origen) el host del request es el subdominio de la
-        // clínica. En dev (frontend :5173 ≠ backend :8000) se usa FRONTEND_URL.
-        $base = config('app.frontend_url') ?: $request->getSchemeAndHttpHost();
+        // Regreso al frontend de ESTA clínica (su subdominio en prod, o el
+        // FRONTEND_URL en dev) — no al host del API.
+        $base = $tenant->appUrl();
 
         $builder = $tenant->newSubscription('default', $plan->stripe_price_id);
         // Respeta el periodo de prueba restante (no cobra hasta que termine).
@@ -88,10 +88,8 @@ class BillingController extends Controller
             'Aún no tienes un método de pago registrado. Inicia tu suscripción primero.',
         );
 
-        $base = config('app.frontend_url') ?: $request->getSchemeAndHttpHost();
-
         return response()->json([
-            'url' => $tenant->billingPortalUrl($base.'/configuracion'),
+            'url' => $tenant->billingPortalUrl($tenant->appUrl().'/configuracion'),
         ]);
     }
 }
