@@ -80,6 +80,18 @@ class PlatformAdminTest extends TestCase
         $this->assertContains('clinica-piloto', collect($data)->pluck('slug')->all());
     }
 
+    public function test_platform_routes_work_without_a_default_tenant(): void
+    {
+        // SaaS recién desplegado: aún no hay clínicas ni tenant por defecto.
+        // El panel super-admin (admin.amaradental.mx) debe seguir operando.
+        $token = $this->platformToken();
+        Tenant::query()->delete();
+
+        $this->withToken($token)->getJson('/api/platform/tenants')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
     public function test_platform_admin_can_provision_a_tenant(): void
     {
         $token = $this->platformToken();
