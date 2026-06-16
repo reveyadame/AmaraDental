@@ -18,6 +18,7 @@ class Plan extends Model
         'name',
         'max_patients',
         'includes_app',
+        'price_mxn',
         'stripe_price_id',
         'sort_order',
     ];
@@ -27,6 +28,7 @@ class Plan extends Model
         return [
             'max_patients' => 'integer',
             'includes_app' => 'boolean',
+            'price_mxn' => 'integer',
             'sort_order' => 'integer',
         ];
     }

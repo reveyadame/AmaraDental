@@ -28,8 +28,10 @@ use App\Http\Controllers\DentalTreatmentLogController;
 use App\Http\Controllers\EndodonticRecordsController;
 use App\Http\Controllers\OdontogramController;
 use App\Http\Controllers\Patient\AccountController as PatientAccountController;
+use App\Http\Controllers\Platform\AdminsController as PlatformAdminsController;
 use App\Http\Controllers\Platform\AuthController as PlatformAuthController;
 use App\Http\Controllers\Platform\PlansController as PlatformPlansController;
+use App\Http\Controllers\Platform\StatsController as PlatformStatsController;
 use App\Http\Controllers\Platform\TenantsController as PlatformTenantsController;
 use App\Http\Controllers\Patient\AppointmentsController as PatientAppointmentsController;
 use App\Http\Controllers\Patient\AuthController as PatientAuthController;
@@ -279,11 +281,24 @@ Route::prefix('platform')->group(function (): void {
         Route::get('me', [PlatformAuthController::class, 'me']);
         Route::post('auth/logout', [PlatformAuthController::class, 'logout']);
 
-        Route::get('plans', [PlatformPlansController::class, 'index']);
+        // Dashboard: métricas agregadas cross-tenant.
+        Route::get('stats', [PlatformStatsController::class, 'index']);
 
+        // Configuración de planes.
+        Route::get('plans', [PlatformPlansController::class, 'index']);
+        Route::patch('plans/{plan}', [PlatformPlansController::class, 'update']);
+
+        // Gestión de clínicas.
         Route::get('tenants', [PlatformTenantsController::class, 'index']);
         Route::post('tenants', [PlatformTenantsController::class, 'store']);
         Route::get('tenants/{tenant}', [PlatformTenantsController::class, 'show']);
         Route::patch('tenants/{tenant}', [PlatformTenantsController::class, 'update']);
+        Route::delete('tenants/{tenant}', [PlatformTenantsController::class, 'destroy']);
+
+        // Gestión de super-admins.
+        Route::get('admins', [PlatformAdminsController::class, 'index']);
+        Route::post('admins', [PlatformAdminsController::class, 'store']);
+        Route::patch('admins/{admin}', [PlatformAdminsController::class, 'update']);
+        Route::delete('admins/{admin}', [PlatformAdminsController::class, 'destroy']);
     });
 });
