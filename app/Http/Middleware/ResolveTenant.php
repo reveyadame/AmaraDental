@@ -31,12 +31,21 @@ class ResolveTenant
     {
         $tenant = $this->resolve($request);
 
+        // Las rutas de plataforma (super-admin) operan por ENCIMA de los tenants:
+        // funcionan aunque no haya tenant resuelto (admin.amaradental.mx, o un
+        // SaaS recién desplegado sin tenant por defecto) y sobre suspendidas.
+        if ($request->is('api/platform/*')) {
+            if ($tenant !== null) {
+                TenantContext::setTenant($tenant);
+            }
+
+            return $next($request);
+        }
+
         abort_if($tenant === null, 404, 'Clínica no encontrada.');
 
-        // Clínica suspendida → bloqueada para todo lo de cara al usuario. Las
-        // rutas de plataforma (super-admin) sí pueden operar sobre suspendidas.
         abort_if(
-            ! $tenant->isActive() && ! $request->is('api/platform/*'),
+            ! $tenant->isActive(),
             403,
             'Esta clínica está suspendida. Contacta a Amara Dental.',
         );
