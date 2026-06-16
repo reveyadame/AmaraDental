@@ -28,6 +28,7 @@ use App\Http\Controllers\DentalTreatmentLogController;
 use App\Http\Controllers\EndodonticRecordsController;
 use App\Http\Controllers\OdontogramController;
 use App\Http\Controllers\Patient\AccountController as PatientAccountController;
+use App\Http\Controllers\Public\SignupController;
 use App\Http\Controllers\Platform\AdminsController as PlatformAdminsController;
 use App\Http\Controllers\Platform\AuthController as PlatformAuthController;
 use App\Http\Controllers\Platform\PlansController as PlatformPlansController;
@@ -268,6 +269,16 @@ Route::prefix('patient')->middleware(EnsureAppModule::class)->group(function ():
         Route::get('prescriptions', [PatientPrescriptionsController::class, 'index']);
         Route::get('recalls', [PatientRecallsController::class, 'index']);
     });
+});
+
+/*
+ * Landing pública (apex amaradental.mx): alta self-service. Sin auth ni tenant.
+ * Con rate limiting para evitar abuso del alta.
+ */
+Route::prefix('public')->group(function (): void {
+    Route::get('plans', [SignupController::class, 'plans']);
+    Route::get('slug-available', [SignupController::class, 'checkSlug'])->middleware('throttle:60,1');
+    Route::post('signup', [SignupController::class, 'store'])->middleware('throttle:8,1');
 });
 
 /*
