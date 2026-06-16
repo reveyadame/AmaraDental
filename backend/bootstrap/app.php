@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'api/platform/*',
             'api/patient/*',
+            'stripe/*', // webhook de Stripe (Cashier) — viene de Stripe, sin cookie.
         ]);
 
         $middleware->api(append: [

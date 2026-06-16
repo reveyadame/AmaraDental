@@ -157,3 +157,60 @@ El `dist/` resultante se sirve en todos los subdominios.
    branding (logo, colores, datos fiscales).
 
 Sin tocar DNS, SSL ni servidor por cada clínica.
+
+---
+
+## 10. Billing con Stripe (cobro de la suscripción)
+
+La **clínica le paga a Amara Dental** vía Stripe (Laravel Cashier). Self-service:
+el admin de la clínica registra su tarjeta y se cobra automático cada ciclo. Al
+dar de alta una clínica, arranca una **prueba gratis de 14 días**; al terminar,
+debe tener método de pago o se restringe el acceso (HTTP 402).
+
+### 10.1 En el dashboard de Stripe
+
+1. Crea **3 Productos** (Esencial, Crecimiento, Premium), cada uno con un
+   **Price recurrente mensual en MXN**. Copia los `price_...` de cada uno.
+2. Crea un **endpoint de webhook**: `https://amaradental.mx/stripe/webhook`,
+   suscrito a los eventos de Cashier (subscription created/updated/deleted,
+   invoice payment succeeded/failed, customer updated). Copia el
+   **signing secret** (`whsec_...`).
+
+### 10.2 Variables de entorno (`.env`)
+
+```dotenv
+# Empieza en modo TEST (sk_test_/pk_test_) y prueba todo antes de ir a live.
+STRIPE_KEY=pk_test_xxx
+STRIPE_SECRET=sk_test_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+CASHIER_CURRENCY=mxn
+CASHIER_CURRENCY_LOCALE=es_MX
+
+# Mapea cada plan a su Price de Stripe (de los que copiaste arriba).
+STRIPE_PRICE_ESENCIAL=price_xxx
+STRIPE_PRICE_CRECIMIENTO=price_xxx
+STRIPE_PRICE_PREMIUM=price_xxx
+```
+
+### 10.3 Después de configurar
+
+```bash
+# Re-siembra los planes para que tomen los price_id del env (idempotente).
+php artisan db:seed --class=PlanSeeder --force
+```
+
+### 10.4 Cómo funciona el acceso
+
+- **Prueba (14 días)** o **suscripción activa** → la clínica opera normal.
+- **Prueba vencida sin suscripción** → las rutas operativas responden **402**;
+  el frontend muestra un banner "Tu suscripción no está activa · Ir a pagar".
+- El admin va a **Configuración → Plan** → "Agregar método de pago" → Stripe
+  Checkout → vuelve activo. "Administrar pago" abre el portal de Stripe.
+- Clínicas **grandfathered** (sin `stripe_id` ni `trial_ends_at`, ej. el cliente
+  actual migrado sin trial) cuentan como activas — no se les cobra ni restringe.
+
+### 10.5 Pruebas en modo test
+
+- Tarjeta de prueba Stripe: `4242 4242 4242 4242`, cualquier fecha futura/CVC.
+- Para simular eventos: `stripe listen --forward-to amaradental.mx/stripe/webhook`
+  (Stripe CLI) o dispara eventos desde el dashboard.

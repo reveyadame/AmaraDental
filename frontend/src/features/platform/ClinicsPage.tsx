@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { toast } from 'sonner'
-import { Building2, Loader2, Power, PowerOff } from 'lucide-react'
+import { Building2, Eye, Loader2, Power, PowerOff } from 'lucide-react'
 import { usePlans, useTenants, useUpdateTenant } from './hooks'
 import { NewClinicDialog } from './NewClinicDialog'
+import { ClinicDetailDialog } from './ClinicDetailDialog'
 import { useConfirm } from '@/shared/ui/confirm'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { Badge } from '@/shared/ui/badge'
@@ -29,6 +31,7 @@ export function ClinicsPage() {
   const plans = usePlans()
   const update = useUpdateTenant()
   const confirm = useConfirm()
+  const [detailId, setDetailId] = useState<number | null>(null)
 
   const changePlan = (t: PlatformTenant, key: string) => {
     if (key === t.plan?.key) return
@@ -120,23 +123,30 @@ export function ClinicsPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => toggle(t)}
-                      disabled={update.isPending}
-                      className={t.status === 'active' ? 'text-destructive hover:text-destructive' : ''}
-                    >
-                      {t.status === 'active' ? (
-                        <>
-                          <PowerOff className="size-4" /> Suspender
-                        </>
-                      ) : (
-                        <>
-                          <Power className="size-4" /> Reactivar
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => setDetailId(t.id)}>
+                        <Eye className="size-4" /> Ver
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => toggle(t)}
+                        disabled={update.isPending}
+                        className={
+                          t.status === 'active' ? 'text-destructive hover:text-destructive' : ''
+                        }
+                      >
+                        {t.status === 'active' ? (
+                          <>
+                            <PowerOff className="size-4" /> Suspender
+                          </>
+                        ) : (
+                          <>
+                            <Power className="size-4" /> Reactivar
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -149,6 +159,13 @@ export function ClinicsPage() {
           </div>
         )}
       </Card>
+
+      <ClinicDetailDialog
+        tenantId={detailId}
+        onOpenChange={(open) => {
+          if (!open) setDetailId(null)
+        }}
+      />
     </div>
   )
 }

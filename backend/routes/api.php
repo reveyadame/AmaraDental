@@ -6,6 +6,7 @@ use App\Http\Controllers\AgendaBlocksController;
 use App\Http\Controllers\AppointmentsController;
 use App\Http\Controllers\AuditsController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\CashExpensesController;
 use App\Http\Controllers\CashMovementsController;
@@ -47,6 +48,7 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TreatmentsController;
 use App\Http\Controllers\UsersController;
 use App\Http\Middleware\EnsureAppModule;
+use App\Http\Middleware\EnsureBillingActive;
 use App\Http\Middleware\EnsurePatientAccount;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsureTenantMatchesUser;
@@ -68,7 +70,11 @@ Route::get('agenda/feed/{token}.ics', [IcsFeedController::class, 'feed'])
 /*
  * Autenticado.
  */
-Route::middleware(['auth:sanctum', EnsureTenantMatchesUser::class])->group(function (): void {
+Route::middleware([
+    'auth:sanctum',
+    EnsureTenantMatchesUser::class,
+    EnsureBillingActive::class,
+])->group(function (): void {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
@@ -76,6 +82,12 @@ Route::middleware(['auth:sanctum', EnsureTenantMatchesUser::class])->group(funct
 
     // Suscripción de la clínica (plan + uso de pacientes + módulos).
     Route::get('/subscription', [SubscriptionController::class, 'show']);
+
+    // Billing (pago de la suscripción a Amara Dental vía Stripe).
+    Route::get('/billing', [BillingController::class, 'show']);
+    Route::get('/billing/details', [BillingController::class, 'details']);
+    Route::post('/billing/checkout', [BillingController::class, 'checkout']);
+    Route::get('/billing/portal', [BillingController::class, 'portal']);
 
     Route::put('/branding', [BrandingController::class, 'update']);
 

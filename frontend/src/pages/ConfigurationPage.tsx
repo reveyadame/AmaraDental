@@ -30,6 +30,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Skeleton } from '@/shared/ui/skeleton'
 import { accent } from '@/shared/lib/module-accents'
 import { SubscriptionCard } from '@/features/subscription/SubscriptionCard'
+import { BillingCard } from '@/features/billing/BillingCard'
 import {
   Select,
   SelectContent,
@@ -1048,6 +1049,7 @@ export function ConfigurationPage() {
             </TabsContent>
 
             <TabsContent value="plan" className="space-y-6">
+              <BillingCard />
               <SubscriptionCard />
             </TabsContent>
           </Tabs>

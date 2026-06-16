@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
+import { BillingBanner } from '@/features/billing/BillingBanner'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import {
   ArrowLeftRight,
@@ -583,6 +584,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
         </header>
+        <BillingBanner />
         <main className="flex-1 overflow-y-auto">{children}</main>
         <AppFooter />
       </div>

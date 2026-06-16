@@ -1,5 +1,6 @@
 import { platformApi, setPlatformToken } from '@/shared/api/platform-client'
 import type { ApiEnvelope } from '@/shared/types/api'
+import type { Invoice } from '@/features/billing/api'
 
 export interface PlatformAdmin {
   id: number
@@ -16,6 +17,17 @@ export interface PlatformPlan {
   includes_app: boolean
 }
 
+export interface TenantBilling {
+  subscribed: boolean
+  on_trial: boolean
+  trial_ends_at: string | null
+  status: string | null
+  ends_at: string | null
+  renews_at: string | null
+  card_last_four: string | null
+  invoices: Invoice[]
+}
+
 export interface PlatformTenant {
   id: number
   name: string
@@ -25,6 +37,12 @@ export interface PlatformTenant {
   plan: PlatformPlan | null
   created_at: string | null
   counts?: { users: number; patients: number }
+  billing?: TenantBilling
+}
+
+export async function getTenant(id: number): Promise<PlatformTenant> {
+  const { data } = await platformApi.get<ApiEnvelope<PlatformTenant>>(`/api/platform/tenants/${id}`)
+  return data.data
 }
 
 export async function listPlans(): Promise<PlatformPlan[]> {

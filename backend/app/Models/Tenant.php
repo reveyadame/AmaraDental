@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Laravel\Cashier\Billable;
 
 class Tenant extends Model
 {
     /** @use HasFactory<\Database\Factories\TenantFactory> */
-    use HasFactory;
+    use Billable, HasFactory;
 
     public const STATUS_ACTIVE = 'active';
     public const STATUS_SUSPENDED = 'suspended';
@@ -22,6 +23,8 @@ class Tenant extends Model
         'slug',
         'status',
         'plan_id',
+        'trial_ends_at',
+        'trial_reminder_sent_at',
         'brand_name',
         'logo_url',
         'color_primary',
@@ -64,6 +67,8 @@ class Tenant extends Model
             'ticket_show_address' => 'boolean',
             'ticket_show_cedulas' => 'boolean',
             'ticket_auto_print' => 'boolean',
+            'trial_ends_at' => 'datetime',
+            'trial_reminder_sent_at' => 'datetime',
         ];
     }
 
@@ -71,6 +76,35 @@ class Tenant extends Model
     {
         // status puede ser null en tenants creados antes de la columna.
         return ($this->status ?? self::STATUS_ACTIVE) !== self::STATUS_SUSPENDED;
+    }
+
+    /**
+     * ¿La clínica tiene billing vigente? True si está en periodo de prueba o
+     * tiene una suscripción activa (incluido el grace period tras cancelar).
+     * Las clínicas sin `stripe_id` Y sin trial (grandfathered) cuentan como
+     * vigentes para no romper a clientes previos al billing.
+     */
+    public function hasActiveBilling(): bool
+    {
+        if ($this->stripe_id === null && $this->trial_ends_at === null) {
+            return true; // grandfathered (cliente previo al billing)
+        }
+
+        return $this->onGenericTrial() || $this->subscribed();
+    }
+
+    /**
+     * URL de acceso de la clínica: su subdominio en producción
+     * (`slug.amaradental.mx`), o el frontend de dev si no hay dominio central.
+     */
+    public function appUrl(): string
+    {
+        $central = config('tenancy.central_domains')[0] ?? null;
+        if ($central) {
+            return 'https://'.$this->slug.'.'.$central;
+        }
+
+        return rtrim(config('app.frontend_url') ?: config('app.url', ''), '/');
     }
 
     public function plan(): BelongsTo

@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import { apiBaseURL } from './base-url'
+import { tenantSlugFromHost } from './tenant-host'
 
 export const api = axios.create({
   baseURL: apiBaseURL,
@@ -9,6 +10,16 @@ export const api = axios.create({
     Accept: 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
   },
+})
+
+// Cuando el API vive en otro host (api.amaradental.mx) y el frontend en el
+// subdominio de la clínica, le decimos al API qué clínica es vía X-Tenant.
+api.interceptors.request.use((config) => {
+  const slug = tenantSlugFromHost()
+  if (slug) {
+    config.headers.set('X-Tenant', slug)
+  }
+  return config
 })
 
 /**

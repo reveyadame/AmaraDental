@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getPlatformToken } from '@/shared/api/platform-client'
 import {
   createTenant,
+  getTenant,
   listPlans,
   listTenants,
   platformLogin,
@@ -49,6 +50,16 @@ export function useTenants() {
 
 export function usePlans() {
   return useQuery({ queryKey: ['platform', 'plans'], queryFn: listPlans, staleTime: 300_000 })
+}
+
+/** Detalle de una clínica (conteos + billing + facturas). Hace llamadas a Stripe. */
+export function useTenantDetail(id: number | null) {
+  return useQuery({
+    queryKey: ['platform', 'tenant', id],
+    queryFn: () => getTenant(id as number),
+    enabled: id !== null,
+    retry: false,
+  })
 }
 
 export function useCreateTenant() {
