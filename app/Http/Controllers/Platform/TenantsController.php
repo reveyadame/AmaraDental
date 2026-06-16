@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Platform;
 
 use App\Actions\DeleteTenant;
 use App\Actions\ProvisionTenant;
+use App\Actions\ResetTenantAdminPassword;
 use App\Http\Controllers\Controller;
 use App\Models\Patient;
 use App\Models\Plan;
@@ -117,6 +118,21 @@ class TenantsController extends Controller
         $deleter->handle($tenant);
 
         return response()->json(['message' => 'Clínica eliminada permanentemente.']);
+    }
+
+    /**
+     * Regenera la contraseña del admin de la clínica y se la reenvía por correo.
+     * Devuelve la nueva contraseña para mostrarla una vez en el panel.
+     */
+    public function resetAdminPassword(Tenant $tenant, ResetTenantAdminPassword $action): JsonResponse
+    {
+        $result = $action->handle($tenant);
+
+        return response()->json([
+            'admin_email' => $result['email'],
+            'admin_password' => $result['password'],
+            'email_sent' => $result['sent'],
+        ]);
     }
 
     /** @return array<string, mixed> */
