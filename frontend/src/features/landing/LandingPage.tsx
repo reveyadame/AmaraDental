@@ -12,6 +12,7 @@ import {
   FlaskConical,
   Heart,
   Lock,
+  Mail,
   Menu,
   Palette,
   ShieldCheck,
@@ -24,9 +25,10 @@ import { usePublicPlans } from './hooks'
 import type { PublicPlan } from './api'
 import { AmaraIcon, AmaraWordmark } from './AmaraLogo'
 import { Reveal } from './Reveal'
+import { CONTACT_EMAIL } from './constants'
 import { formatMXN } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
-import { Sheet, SheetContent, SheetTrigger } from '@/shared/ui/sheet'
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/shared/ui/sheet'
 
 const NAV_LINKS = [
   { href: '#caracteristicas', label: 'Características' },
@@ -112,16 +114,35 @@ function Header() {
               <Menu className="size-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-72">
-            <div className="mt-8 flex flex-col gap-5">
+          <SheetContent side="right" className="w-80 gap-0 p-0">
+            <SheetTitle className="sr-only">Menú</SheetTitle>
+            <div className="flex items-center border-b px-5 py-4">
+              <AmaraWordmark iconClassName="size-8" />
+            </div>
+            <nav className="flex flex-col gap-1 p-3">
               {NAV_LINKS.map((l) => (
-                <a key={l.href} href={l.href} onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-brand-navy">
+                <a
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg px-3 py-2.5 text-base font-medium text-brand-navy transition-colors hover:bg-muted"
+                >
                   {l.label}
                 </a>
               ))}
-              <Button asChild className="mt-2">
-                <Link to="/registro">Prueba gratis</Link>
+            </nav>
+            <div className="mt-auto space-y-4 border-t p-5">
+              <Button asChild size="lg" className="w-full">
+                <Link to="/registro" onClick={() => setOpen(false)}>
+                  Prueba gratis
+                </Link>
               </Button>
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                className="flex items-center justify-center gap-2 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
+              >
+                <Mail className="size-4" /> {CONTACT_EMAIL}
+              </a>
             </div>
           </SheetContent>
         </Sheet>
@@ -357,7 +378,11 @@ function Pricing() {
         ))}
       </div>
       <p className="mt-8 text-center text-sm text-muted-foreground">
-        ¿Tienes una clínica grande o varios consultorios? <a href="#contacto" className="font-medium text-brand-teal hover:underline">Hablemos</a>.
+        ¿Tienes una clínica grande o varios consultorios?{' '}
+        <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-brand-teal hover:underline">
+          Hablemos
+        </a>
+        .
       </p>
     </section>
   )
@@ -465,6 +490,12 @@ function FinalCta() {
             Crear mi clínica <ArrowRight className="size-4" />
           </Link>
         </Button>
+        <p className="mt-5 text-sm text-white/80">
+          ¿Tienes dudas? Escríbenos a{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium underline underline-offset-2 hover:text-white">
+            {CONTACT_EMAIL}
+          </a>
+        </p>
       </Reveal>
     </section>
   )
@@ -474,13 +505,19 @@ function Footer() {
   return (
     <footer className="bg-brand-navy-deep text-white/70">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <div className="grid gap-10 md:grid-cols-4">
+        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
           <div className="md:col-span-2">
             <AmaraWordmark tone="light" iconClassName="size-9" />
             <p className="mt-4 max-w-sm text-sm text-white/60">
               Software de gestión para clínicas dentales en México. Agenda, expediente, caja y
               pacientes en un solo lugar, con tu marca.
             </p>
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="mt-5 inline-flex items-center gap-2 text-sm text-white/80 transition-colors hover:text-white"
+            >
+              <Mail className="size-4" /> {CONTACT_EMAIL}
+            </a>
           </div>
           <div>
             <p className="text-sm font-semibold text-white">Producto</p>
@@ -492,11 +529,15 @@ function Footer() {
             </ul>
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">Cumplimiento</p>
+            <p className="text-sm font-semibold text-white">Contacto</p>
             <ul className="mt-3 space-y-2 text-sm">
-              <li>NOM-004-SSA3</li>
-              <li>NOM-024-SSA3</li>
-              <li>NOM-013-SSA2</li>
+              <li>
+                <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-white">
+                  {CONTACT_EMAIL}
+                </a>
+              </li>
+              <li>Soporte en español</li>
+              <li className="text-white/50">Cumple NOM-004 · NOM-024 · NOM-013</li>
             </ul>
           </div>
         </div>

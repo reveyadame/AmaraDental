@@ -15,6 +15,7 @@ import {
 import { usePublicPlans, useDebouncedValue, useSignup, useSlugCheck } from './hooks'
 import type { SignupResult } from './api'
 import { AmaraLogoVertical, AmaraWordmark } from './AmaraLogo'
+import { CONTACT_EMAIL } from './constants'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { formatMXN } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
@@ -273,6 +274,13 @@ export function SignupPage() {
                 Al crear tu cuenta aceptas operar conforme a las normas aplicables de tu clínica.
               </p>
             </form>
+
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              ¿Necesitas ayuda? Escríbenos a{' '}
+              <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-brand-teal hover:underline">
+                {CONTACT_EMAIL}
+              </a>
+            </p>
           </div>
         </div>
       </div>
