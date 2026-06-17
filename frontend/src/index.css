@@ -215,6 +215,21 @@ html {
   animation: amara-slide-in-left 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Entrada deslizando de izquierda a derecha (página completa). */
+@keyframes amara-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(-64px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-slide-in-right {
+  animation: amara-slide-in-right 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Respeta a quien prefiere menos movimiento. */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -224,7 +239,8 @@ html {
   .animate-fade-up,
   .animate-fade-up-slow,
   .animate-fade-in,
-  .animate-slide-in-left {
+  .animate-slide-in-left,
+  .animate-slide-in-right {
     opacity: 1;
     transform: none;
     animation: none;

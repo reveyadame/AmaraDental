@@ -47,7 +47,7 @@ const SIDE_POINTS = [
 
 function BrandPanel() {
   return (
-    <div className="animate-slide-in-left relative hidden overflow-hidden bg-gradient-to-br from-brand-navy via-brand-navy to-brand-navy-deep p-10 text-white lg:flex lg:flex-col lg:justify-between">
+    <div className="relative hidden overflow-hidden bg-gradient-to-br from-brand-navy via-brand-navy to-brand-navy-deep p-10 text-white lg:flex lg:flex-col lg:justify-between">
       <div className="pointer-events-none absolute -right-20 -top-20 size-72 rounded-full bg-brand-teal/20 blur-3xl" />
       <Link to="/" className="relative">
         <AmaraWordmark tone="light" iconClassName="size-9" />
@@ -153,14 +153,12 @@ export function SignupPage() {
   if (result) return <SuccessScreen result={result} />
 
   return (
-    <div className="amara-brand min-h-screen lg:grid lg:grid-cols-2">
-      <BrandPanel />
+    <div className="amara-brand overflow-hidden">
+      <div className="animate-slide-in-right min-h-screen lg:grid lg:grid-cols-2">
+        <BrandPanel />
 
-      <div className="flex min-h-screen flex-col bg-background px-4 py-8 sm:px-8">
-        <div
-          className="animate-fade-up-slow mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-6"
-          style={{ animationDelay: '260ms' }}
-        >
+        <div className="flex min-h-screen flex-col bg-background px-4 py-8 sm:px-8">
+          <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-6">
           <Link
             to="/"
             className="mb-8 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-brand-navy"
@@ -275,6 +273,7 @@ export function SignupPage() {
               Al crear tu cuenta aceptas operar conforme a las normas aplicables de tu clínica.
             </p>
           </form>
+          </div>
         </div>
       </div>
     </div>
