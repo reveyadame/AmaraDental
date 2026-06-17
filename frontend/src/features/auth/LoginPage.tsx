@@ -65,7 +65,7 @@ export function LoginPage() {
             {clinicLogo ? (
               <img src={clinicLogo} alt={clinicName} className="h-10 w-auto" />
             ) : (
-              <AmaraIcon className="size-10 text-brand-teal" />
+              <AmaraWordmark iconClassName="size-10" />
             )}
             <CardTitle className="text-2xl">Bienvenido</CardTitle>
             <CardDescription>
