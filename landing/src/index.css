@@ -1,0 +1,249 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Tokens base (modo claro). El módulo Branding sobrescribirá --primary,
+  --primary-foreground, --logo-url, --brand-name en tiempo de ejecución
+  inyectando un <style id="tenant-theme"> con valores por tenant.
+*/
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+
+  --primary: oklch(0.546 0.215 262.881);          /* azul clínico, override por tenant */
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+
+  /* Marca Amara Dental (sitio público / apex). Colores fijos de marca. */
+  --brand-navy: #103a5b;
+  --brand-navy-deep: #0c2c46;
+  --brand-teal: #1ba4c6;
+  --brand-teal-dark: #1587a4;
+  --brand-teal-light: #38b6d4;
+
+  --radius: 0.625rem;
+
+  /* Cromo de la app — el tenant puede sobreescribir vía ThemeProvider. */
+  --sidebar-bg: var(--background);
+  --sidebar-fg: var(--foreground);
+  --sidebar-fg-muted: var(--muted-foreground);
+  --header-bg: var(--background);
+  --header-fg: var(--foreground);
+  --header-fg-muted: var(--muted-foreground);
+
+  /* Ítems del menú lateral. Defaults derivados del tema; el tenant los
+     puede personalizar (fondo, texto, hover y estado activo). */
+  --sidebar-item-bg: transparent;
+  --sidebar-item-fg: var(--sidebar-fg-muted);
+  --sidebar-item-hover-bg: color-mix(in srgb, var(--sidebar-fg) 8%, transparent);
+  --sidebar-item-hover-fg: var(--sidebar-fg);
+  --sidebar-active-bg: color-mix(in srgb, var(--primary) 15%, transparent);
+  --sidebar-active-fg: var(--primary);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.708 0.183 262.881);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-navy-deep: var(--brand-navy-deep);
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-teal-dark: var(--brand-teal-dark);
+  --color-brand-teal-light: var(--brand-teal-light);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@theme inline {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+}
+
+/*
+  Sitio público de Amara Dental (apex): dentro de .amara-brand, el primario del
+  tema apunta al teal de marca, así los componentes (botones, anillos) se ven
+  con la identidad sin tocar el tema de las clínicas.
+*/
+.amara-brand {
+  --primary: var(--brand-teal);
+  --primary-foreground: #ffffff;
+  --ring: var(--brand-teal);
+}
+
+/* Desplazamiento suave al navegar entre secciones (anclas #). */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Animación de entrada al hacer scroll (revelado). La activa <Reveal>. */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Entrada del hero al cargar. */
+@keyframes amara-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-up {
+  animation: amara-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Entrada de página (transición al navegar, p. ej. a /registro). */
+@keyframes amara-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-fade-in {
+  animation: amara-fade-in 0.7s ease both;
+}
+
+/* Variante más suave/lenta para la entrada de la página de registro. */
+.animate-fade-up-slow {
+  animation: amara-fade-up 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes amara-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-slide-in-left {
+  animation: amara-slide-in-left 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Entrada deslizando de izquierda a derecha (página completa). */
+@keyframes amara-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(-64px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-slide-in-right {
+  animation: amara-slide-in-right 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Respeta a quien prefiere menos movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal,
+  .animate-fade-up,
+  .animate-fade-up-slow,
+  .animate-fade-in,
+  .animate-slide-in-left,
+  .animate-slide-in-right {
+    opacity: 1;
+    transform: none;
+    animation: none;
+    transition: none;
+  }
+}

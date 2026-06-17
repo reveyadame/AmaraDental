@@ -214,3 +214,38 @@ php artisan db:seed --class=PlanSeeder --force
 - Tarjeta de prueba Stripe: `4242 4242 4242 4242`, cualquier fecha futura/CVC.
 - Para simular eventos: `stripe listen --forward-to amaradental.mx/stripe/webhook`
   (Stripe CLI) o dispara eventos desde el dashboard.
+
+## 11. Landing pública (apex `amaradental.mx`) — proyecto aparte
+
+Desde la separación de concerns, la **landing** vive en `landing/` (Vite+React
+propio), NO en `frontend/`. Esto la mantiene ligera (~150 KB gzip vs ~440 KB de
+la app) y permite desplegarla independiente.
+
+**Qué sirve cada sitio en Plesk:**
+
+| Sitio (vhost) | Document root | Contenido |
+|---|---|---|
+| `amaradental.mx` + `www` (apex) | `landing/dist` | Landing pública + `/registro` |
+| `*.amaradental.mx` (comodín) | `frontend/dist` | App de clínica + `admin.` (panel) |
+
+> El apex es un sitio **distinto** al comodín en Plesk. El comodín NO cubre el
+> apex desnudo. El cert comodín emitido desde el dominio principal sí suele
+> incluir `amaradental.mx` además de `*.amaradental.mx`.
+
+**Build de la landing:**
+
+```bash
+cd landing
+npm install
+npm run build   # usa landing/.env.production (VITE_API_URL + VITE_CENTRAL_DOMAIN)
+# sube landing/dist al document root del apex (incluye .htaccess de SPA fallback)
+```
+
+**CORS:** la landing (apex) llama a `https://api.amaradental.mx/api/public/*`.
+El patrón `CORS_ALLOWED_ORIGIN_PATTERNS` del backend ya cubre el apex
+(`([a-z0-9-]+\.)?amaradental\.mx`). Las rutas `api/public/*` están exentas de
+tenant y de CSRF (ver `ResolveTenant` y `bootstrap/app.php`).
+
+**Dev local:** `cd landing && npm run dev` (puerto 5174). Para que llame al
+backend local agrega `http://localhost:5174` (o `lvh.me:5174`) a
+`CORS_ALLOWED_ORIGINS`/patterns del backend de dev.

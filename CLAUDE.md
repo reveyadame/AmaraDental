@@ -8,10 +8,13 @@ Responder y escribir comentarios/UX en español (mx). Identificadores de código
 
 ## Estructura del repo
 
-Monorepo con dos apps independientes:
+Monorepo con tres apps independientes:
 
 - [backend/](backend/) — Laravel 11 + PHP 8.3 + MySQL 8 (Docker). Scaffold completo: `app/`, `database/migrations/`, `routes/api.php`, etc. Cada dominio vive como modelo + controller + policy + resource en las carpetas planas de Laravel (no se usa la estructura `modules/` de `nwidart/laravel-modules` aunque el paquete está instalado).
-- [frontend/](frontend/) — Vite + React 19 + TS estricto. Estructura feature-sliced en [frontend/src/features/](frontend/src/features/), un folder por dominio.
+- [frontend/](frontend/) — Vite + React 19 + TS estricto. Es la **app privada**: clínica (subdominios `*.amaradental.mx`) + panel super-admin (`admin.amaradental.mx`). Estructura feature-sliced en [frontend/src/features/](frontend/src/features/), un folder por dominio. El host elige qué montar (`isPlatformHost`).
+- [landing/](landing/) — Vite + React + TS. Es el **sitio público** (apex `amaradental.mx`): marketing + alta self-service (`/registro`). Proyecto aparte para no cargar el bundle de la app en la landing (SEO/velocidad) y desplegar independiente. Consume los endpoints públicos `/api/public/*`. Duplica lo mínimo compartido (logo, colores de marca en `src/index.css`, `cn`, cliente axios); cuando crezca, mover lo común a un `packages/shared`.
+
+**No mezclar concerns**: lo público (marketing, sin login, SEO) vive en `landing/`; lo privado (autenticado) en `frontend/`. Un cambio de copy de la landing NO debe tocar `frontend/`.
 
 ## Comandos
 

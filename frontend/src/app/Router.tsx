@@ -38,8 +38,7 @@ import { QuoteFormPage } from '@/features/quotes/QuoteFormPage'
 import { QuoteDetailPage } from '@/features/quotes/QuoteDetailPage'
 import { PrintQuotePage } from '@/features/quotes/PrintQuotePage'
 import { PlatformApp } from '@/features/platform/PlatformApp'
-import { LandingApp } from '@/features/landing/LandingApp'
-import { isLandingHost, isPlatformHost } from '@/shared/api/tenant-host'
+import { isPlatformHost } from '@/shared/api/tenant-host'
 import { ProtectedRoute } from './ProtectedRoute'
 import { AppShell } from './AppShell'
 
@@ -52,14 +51,9 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 export function Router() {
-  // En el apex (amaradental.mx / www) el sitio ES la landing pública con el alta
-  // self-service. No es ninguna clínica ni el panel.
-  if (isLandingHost()) {
-    return <LandingApp />
-  }
-
   // En admin.<central> el sitio ES el panel de plataforma: cualquier ruta lo
   // monta (maneja su propio login por token). Las clínicas nunca llegan aquí.
+  // (La landing pública vive en su propio proyecto: el apex no llega a esta app.)
   if (isPlatformHost()) {
     return (
       <Routes>
