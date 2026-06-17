@@ -159,120 +159,120 @@ export function SignupPage() {
 
         <div className="flex min-h-screen flex-col bg-background px-4 py-8 sm:px-8">
           <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-6">
-          <Link
-            to="/"
-            className="mb-8 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-brand-navy"
-          >
-            <ArrowLeft className="size-4" /> Volver al inicio
-          </Link>
+            <Link
+              to="/"
+              className="mb-8 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-brand-navy"
+            >
+              <ArrowLeft className="size-4" /> Volver al inicio
+            </Link>
 
-          <div className="lg:hidden">
-            <AmaraLogoVertical iconClassName="size-12" className="mx-auto" />
-          </div>
-
-          <h1 className="mt-6 text-2xl font-bold tracking-tight text-brand-navy lg:mt-0">
-            Crea tu clínica
-          </h1>
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Sparkles className="size-4 text-brand-teal" /> 14 días gratis · sin tarjeta · listo en un minuto
-          </p>
-
-          <form onSubmit={submit} className="mt-7 space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="clinic">Nombre de la clínica</Label>
-              <Input
-                id="clinic"
-                value={clinicName}
-                onChange={(e) => {
-                  setClinicName(e.target.value)
-                  if (slug === '') setSlug(slugify(e.target.value))
-                }}
-                placeholder="Sonrisas Felices"
-                required
-              />
+            <div className="lg:hidden">
+              <AmaraLogoVertical iconClassName="size-12" className="mx-auto" />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="slug">Tu dirección web</Label>
-              <div className="flex items-center overflow-hidden rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring">
-                <input
-                  id="slug"
-                  value={slug}
-                  onChange={(e) => setSlug(slugify(e.target.value))}
-                  placeholder="sonrisas"
-                  className="w-full bg-transparent px-3 py-2 text-sm outline-none"
-                  autoComplete="off"
-                />
-                <span className="whitespace-nowrap bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
-                  .{CENTRAL}
-                </span>
-              </div>
-              <SlugHint
-                slug={slug}
-                upToDate={slugUpToDate}
-                checking={slugCheck.isFetching}
-                available={slugCheck.data?.available}
-                reason={slugCheck.data?.reason ?? null}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Tu correo</Label>
-              <Input
-                id="email"
-                type="email"
-                value={adminEmail}
-                onChange={(e) => setAdminEmail(e.target.value)}
-                placeholder="tu@correo.com"
-                required
-              />
-              <p className="text-xs text-muted-foreground">Ahí te enviamos tus credenciales de acceso.</p>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="adminName">Tu nombre (opcional)</Label>
-              <Input
-                id="adminName"
-                value={adminName}
-                onChange={(e) => setAdminName(e.target.value)}
-                placeholder="Dr. Juan Pérez"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Plan</Label>
-              <Select value={planKey} onValueChange={setPlanKey}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Elige un plan" />
-                </SelectTrigger>
-                <SelectContent>
-                  {plans.data?.map((p) => (
-                    <SelectItem key={p.key} value={p.key}>
-                      {p.name}
-                      {p.price_mxn !== null ? ` — ${formatMXN(p.price_mxn)}/mes` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Puedes cambiarlo cuando quieras. No se cobra durante la prueba.
-              </p>
-            </div>
-
-            {signup.isError ? (
-              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {getApiErrorMessage(signup.error, 'No fue posible crear tu clínica. Intenta de nuevo.')}
-              </p>
-            ) : null}
-
-            <Button type="submit" size="lg" className="w-full" disabled={!canSubmit}>
-              {signup.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Crear mi clínica gratis
-            </Button>
-            <p className="text-center text-xs text-muted-foreground">
-              Al crear tu cuenta aceptas operar conforme a las normas aplicables de tu clínica.
+            <h1 className="mt-6 text-2xl font-bold tracking-tight text-brand-navy lg:mt-0">
+              Crea tu clínica
+            </h1>
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Sparkles className="size-4 text-brand-teal" /> 14 días gratis · sin tarjeta · listo en un minuto
             </p>
-          </form>
+
+            <form onSubmit={submit} className="mt-7 space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="clinic">Nombre de la clínica</Label>
+                <Input
+                  id="clinic"
+                  value={clinicName}
+                  onChange={(e) => {
+                    setClinicName(e.target.value)
+                    if (slug === '') setSlug(slugify(e.target.value))
+                  }}
+                  placeholder="Sonrisas Felices"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="slug">Tu dirección web</Label>
+                <div className="flex items-center overflow-hidden rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring">
+                  <input
+                    id="slug"
+                    value={slug}
+                    onChange={(e) => setSlug(slugify(e.target.value))}
+                    placeholder="sonrisas"
+                    className="w-full bg-transparent px-3 py-2 text-sm outline-none"
+                    autoComplete="off"
+                  />
+                  <span className="whitespace-nowrap bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
+                    .{CENTRAL}
+                  </span>
+                </div>
+                <SlugHint
+                  slug={slug}
+                  upToDate={slugUpToDate}
+                  checking={slugCheck.isFetching}
+                  available={slugCheck.data?.available}
+                  reason={slugCheck.data?.reason ?? null}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Tu correo</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="tu@correo.com"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">Ahí te enviamos tus credenciales de acceso.</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="adminName">Tu nombre (opcional)</Label>
+                <Input
+                  id="adminName"
+                  value={adminName}
+                  onChange={(e) => setAdminName(e.target.value)}
+                  placeholder="Dr. Juan Pérez"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Plan</Label>
+                <Select value={planKey} onValueChange={setPlanKey}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Elige un plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plans.data?.map((p) => (
+                      <SelectItem key={p.key} value={p.key}>
+                        {p.name}
+                        {p.price_mxn !== null ? ` — ${formatMXN(p.price_mxn)}/mes` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Puedes cambiarlo cuando quieras. No se cobra durante la prueba.
+                </p>
+              </div>
+
+              {signup.isError ? (
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {getApiErrorMessage(signup.error, 'No fue posible crear tu clínica. Intenta de nuevo.')}
+                </p>
+              ) : null}
+
+              <Button type="submit" size="lg" className="w-full" disabled={!canSubmit}>
+                {signup.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                Crear mi clínica gratis
+              </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                Al crear tu cuenta aceptas operar conforme a las normas aplicables de tu clínica.
+              </p>
+            </form>
           </div>
         </div>
       </div>
