@@ -71,8 +71,9 @@ class ProvisionTenant
                 // hasta que termina, cuando debe registrar tarjeta (checkout).
                 'trial_ends_at' => now()->addDays(14),
                 'brand_name' => $name,
-                'color_primary' => 'oklch(0.546 0.215 262.881)',
-                'color_primary_foreground' => 'oklch(0.985 0 0)',
+                // Marca Amara por defecto (teal); la clínica puede personalizarla.
+                'color_primary' => '#1ba4c6',
+                'color_primary_foreground' => '#ffffff',
                 'color_secondary' => 'oklch(0.97 0 0)',
                 'phones' => [],
                 'cedulas_clinica' => [],

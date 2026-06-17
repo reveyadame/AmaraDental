@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Loader2, LogIn } from 'lucide-react'
 import { usePlatformLogin } from './hooks'
+import { AmaraIcon } from '@/shared/brand/AmaraLogo'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
 import { Button } from '@/shared/ui/button'
@@ -27,12 +28,10 @@ export function PlatformLoginPage() {
     <div className="min-h-screen grid place-items-center bg-muted/30 px-6">
       <Card className="w-full max-w-sm">
         <CardHeader className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
-              AD
-            </span>
+          <div className="flex items-center gap-2.5">
+            <AmaraIcon className="size-9 text-brand-teal" />
             <div className="leading-tight">
-              <p className="text-sm font-semibold">{DEFAULT_BRAND_NAME}</p>
+              <p className="text-sm font-semibold text-brand-navy">{DEFAULT_BRAND_NAME}</p>
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Plataforma</p>
             </div>
           </div>

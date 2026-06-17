@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { Building2, CreditCard, LayoutDashboard, LogOut, Menu, ShieldCheck } from 'lucide-react'
 import { usePlatformLogout } from './hooks'
+import { AmaraIcon } from '@/shared/brand/AmaraLogo'
 import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
@@ -43,12 +44,10 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
 
 function Brand() {
   return (
-    <div className="flex items-center gap-2 px-5 py-5">
-      <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground text-sm font-bold">
-        AD
-      </span>
+    <div className="flex items-center gap-2.5 px-5 py-5">
+      <AmaraIcon className="size-9 text-brand-teal" />
       <div className="leading-tight">
-        <p className="text-sm font-semibold">{DEFAULT_BRAND_NAME}</p>
+        <p className="text-sm font-semibold text-brand-navy">{DEFAULT_BRAND_NAME}</p>
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Plataforma</p>
       </div>
     </div>
@@ -108,7 +107,10 @@ export function PlatformShell({ admin }: { admin: PlatformAdmin }) {
             </div>
           </SheetContent>
         </Sheet>
-        <span className="text-sm font-semibold">{DEFAULT_BRAND_NAME}</span>
+        <span className="flex items-center gap-2">
+          <AmaraIcon className="size-6 text-brand-teal" />
+          <span className="text-sm font-semibold text-brand-navy">{DEFAULT_BRAND_NAME}</span>
+        </span>
       </header>
 
       {/* Contenido */}

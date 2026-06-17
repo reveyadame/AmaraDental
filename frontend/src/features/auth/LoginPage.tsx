@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AmaraIcon, AmaraWordmark } from '@/shared/brand/AmaraLogo'
 import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -42,14 +43,7 @@ export function LoginPage() {
   // Marca de la clínica (white-label) para el formulario; marca de plataforma
   // (Amara Dental) para el panel lateral y el footer.
   const clinicName = branding?.brand_name ?? DEFAULT_BRAND_NAME
-  const initialsOf = (name: string) =>
-    name
-      .split(/\s+/)
-      .map((w) => w[0] ?? '')
-      .join('')
-      .slice(0, 2)
-      .toUpperCase()
-  const platformInitials = initialsOf(DEFAULT_BRAND_NAME)
+  const clinicLogo = branding?.logo_url
   const year = new Date().getFullYear()
 
   const onSubmit = (values: LoginForm) =>
@@ -68,9 +62,11 @@ export function LoginPage() {
         <div className="flex flex-1 items-center justify-center">
         <Card className="w-full max-w-sm border-none shadow-none lg:border lg:shadow-sm">
           <CardHeader className="space-y-2">
-            <div className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground text-sm font-bold tracking-tight">
-              {platformInitials}
-            </div>
+            {clinicLogo ? (
+              <img src={clinicLogo} alt={clinicName} className="h-10 w-auto" />
+            ) : (
+              <AmaraIcon className="size-10 text-brand-teal" />
+            )}
             <CardTitle className="text-2xl">Bienvenido</CardTitle>
             <CardDescription>
               Inicia sesión en {clinicName} para continuar.
@@ -144,9 +140,7 @@ export function LoginPage() {
         {/* Footer de marca comercial (plataforma) */}
         <footer className="mt-10 flex flex-col items-center gap-1.5 text-center">
           <div className="flex items-center gap-2">
-            <span className="grid size-6 place-items-center rounded-md bg-primary text-primary-foreground text-[11px] font-bold tracking-tight">
-              {platformInitials}
-            </span>
+            <AmaraIcon className="size-6 text-brand-teal" />
             <span className="text-sm font-semibold tracking-tight text-foreground">
               {DEFAULT_BRAND_NAME}
             </span>
@@ -161,12 +155,7 @@ export function LoginPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--primary)/0.1,transparent_55%)]" />
 
         <div className="relative flex items-center gap-2 p-10">
-          <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground text-sm font-bold tracking-tight">
-            {platformInitials}
-          </span>
-          <span className="text-lg font-semibold tracking-tight text-foreground">
-            {DEFAULT_BRAND_NAME}
-          </span>
+          <AmaraWordmark iconClassName="size-9" />
         </div>
 
         <div className="relative flex flex-1 items-center justify-center">

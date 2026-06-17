@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { AmaraIcon } from '@/shared/brand/AmaraLogo'
 import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
 import { BillingBanner } from '@/features/billing/BillingBanner'
 import { Link, NavLink, useLocation } from 'react-router-dom'
@@ -490,9 +491,7 @@ function AppFooter() {
     <footer className="shrink-0 border-t border-black/10 dark:border-white/10 bg-background px-4 sm:px-6 py-2.5">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <span className="grid size-4 place-items-center rounded bg-primary text-primary-foreground text-[9px] font-bold leading-none">
-            {initials(DEFAULT_BRAND_NAME)}
-          </span>
+          <AmaraIcon className="size-4 text-brand-teal" />
           <span>
             <span className="font-medium text-foreground">{DEFAULT_BRAND_NAME}</span>
             {' · Software de gestión dental'}
