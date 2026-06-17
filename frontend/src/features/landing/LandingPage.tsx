@@ -23,6 +23,7 @@ import {
 import { usePublicPlans } from './hooks'
 import type { PublicPlan } from './api'
 import { AmaraIcon, AmaraWordmark } from './AmaraLogo'
+import { Reveal } from './Reveal'
 import { formatMXN } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/shared/ui/sheet'
@@ -168,13 +169,29 @@ function PreviewCard() {
   )
 }
 
+function HeroVisual() {
+  const [imgOk, setImgOk] = useState(true)
+  if (!imgOk) return <PreviewCard />
+  return (
+    <div className="relative">
+      <div className="absolute -inset-4 -z-10 rounded-[2rem] bg-brand-teal/20 blur-2xl" />
+      <img
+        src="/hero.png"
+        alt="Panel de Amara Dental mostrando la agenda, el expediente y la caja de una clínica dental"
+        onError={() => setImgOk(false)}
+        className="w-full rounded-2xl border border-white/15 shadow-2xl"
+      />
+    </div>
+  )
+}
+
 function Hero() {
   return (
     <section id="top" className="relative overflow-hidden bg-gradient-to-br from-brand-navy via-brand-navy to-brand-navy-deep text-white">
       <div className="pointer-events-none absolute -right-32 -top-32 size-96 rounded-full bg-brand-teal/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -left-24 size-96 rounded-full bg-brand-teal/10 blur-3xl" />
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:py-28">
-        <div>
+        <div className="animate-fade-up">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs font-medium text-brand-teal-light">
             <Star className="size-3.5 fill-brand-teal-light text-brand-teal-light" /> Software dental hecho en México
           </span>
@@ -203,8 +220,8 @@ function Hero() {
             ))}
           </div>
         </div>
-        <div className="lg:pl-6">
-          <PreviewCard />
+        <div className="animate-fade-up lg:pl-6" style={{ animationDelay: '160ms' }}>
+          <HeroVisual />
         </div>
       </div>
     </section>
@@ -213,8 +230,8 @@ function Hero() {
 
 function Features() {
   return (
-    <section id="caracteristicas" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
-      <div className="mx-auto max-w-2xl text-center">
+    <section id="caracteristicas" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6 lg:py-28">
+      <Reveal className="mx-auto max-w-2xl text-center">
         <p className="text-sm font-semibold uppercase tracking-wide text-brand-teal">Todo en un lugar</p>
         <h2 className="mt-2 text-3xl font-bold tracking-tight text-brand-navy sm:text-4xl">
           Lo que tu clínica necesita, sin complicaciones
@@ -222,16 +239,20 @@ function Features() {
         <p className="mt-4 text-muted-foreground">
           Reúne en una sola plataforma lo que hoy tienes disperso en papel, hojas de cálculo y apps sueltas.
         </p>
-      </div>
+      </Reveal>
       <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {FEATURES.map((f) => (
-          <div key={f.title} className="group rounded-2xl border bg-card p-6 transition-shadow hover:shadow-lg">
+        {FEATURES.map((f, i) => (
+          <Reveal
+            key={f.title}
+            delay={(i % 4) * 80}
+            className="group rounded-2xl border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+          >
             <span className="grid size-11 place-items-center rounded-xl bg-brand-teal/10 text-brand-teal transition-colors group-hover:bg-brand-teal group-hover:text-white">
               <f.icon className="size-5" />
             </span>
             <h3 className="mt-4 font-semibold text-brand-navy">{f.title}</h3>
             <p className="mt-1.5 text-sm text-muted-foreground">{f.desc}</p>
-          </div>
+          </Reveal>
         ))}
       </div>
     </section>
@@ -240,23 +261,23 @@ function Features() {
 
 function HowItWorks() {
   return (
-    <section id="como-funciona" className="border-y bg-muted/40">
+    <section id="como-funciona" className="scroll-mt-20 border-y bg-muted/40">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
-        <div className="mx-auto max-w-2xl text-center">
+        <Reveal className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wide text-brand-teal">En 3 pasos</p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight text-brand-navy sm:text-4xl">
             De cero a operando en minutos
           </h2>
-        </div>
+        </Reveal>
         <div className="mt-14 grid gap-8 md:grid-cols-3">
-          {STEPS.map((s) => (
-            <div key={s.n} className="relative rounded-2xl border bg-card p-7">
+          {STEPS.map((s, i) => (
+            <Reveal key={s.n} delay={i * 100} className="relative rounded-2xl border bg-card p-7">
               <span className="grid size-11 place-items-center rounded-full bg-brand-navy text-lg font-bold text-white">
                 {s.n}
               </span>
               <h3 className="mt-5 text-lg font-semibold text-brand-navy">{s.title}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{s.desc}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -281,8 +302,8 @@ function PlanCard({ plan, featured }: { plan: PublicPlan; featured: boolean }) {
     <div
       className={
         featured
-          ? 'relative rounded-3xl border-2 border-brand-teal bg-card p-7 shadow-xl shadow-brand-teal/10'
-          : 'relative rounded-3xl border bg-card p-7'
+          ? 'relative rounded-3xl border-2 border-brand-teal bg-card p-7 shadow-xl shadow-brand-teal/10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl'
+          : 'relative rounded-3xl border bg-card p-7 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl'
       }
     >
       {featured ? (
@@ -318,8 +339,8 @@ function PlanCard({ plan, featured }: { plan: PublicPlan; featured: boolean }) {
 function Pricing() {
   const plans = usePublicPlans()
   return (
-    <section id="precios" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
-      <div className="mx-auto max-w-2xl text-center">
+    <section id="precios" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6 lg:py-28">
+      <Reveal className="mx-auto max-w-2xl text-center">
         <p className="text-sm font-semibold uppercase tracking-wide text-brand-teal">Precios</p>
         <h2 className="mt-2 text-3xl font-bold tracking-tight text-brand-navy sm:text-4xl">
           Un plan para cada etapa de tu clínica
@@ -327,10 +348,12 @@ function Pricing() {
         <p className="mt-4 text-muted-foreground">
           Sin contratos forzosos. Cambias o cancelas cuando quieras. Todos incluyen 14 días gratis.
         </p>
-      </div>
-      <div className="mt-14 grid gap-6 lg:grid-cols-3">
-        {plans.data?.map((p) => (
-          <PlanCard key={p.key} plan={p} featured={p.key === 'crecimiento'} />
+      </Reveal>
+      <div className="mt-14 grid items-start gap-6 lg:grid-cols-3">
+        {plans.data?.map((p, i) => (
+          <Reveal key={p.key} delay={i * 90}>
+            <PlanCard plan={p} featured={p.key === 'crecimiento'} />
+          </Reveal>
         ))}
       </div>
       <p className="mt-8 text-center text-sm text-muted-foreground">
@@ -344,14 +367,14 @@ function Testimonials() {
   return (
     <section className="border-y bg-muted/40">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
-        <div className="mx-auto max-w-2xl text-center">
+        <Reveal className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight text-brand-navy sm:text-4xl">
             Clínicas que ya trabajan mejor
           </h2>
-        </div>
+        </Reveal>
         <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {TESTIMONIALS.map((t) => (
-            <figure key={t.name} className="flex flex-col rounded-2xl border bg-card p-6">
+          {TESTIMONIALS.map((t, i) => (
+            <Reveal key={t.name} delay={i * 90} className="flex flex-col rounded-2xl border bg-card p-6"><figure className="flex flex-1 flex-col">
               <div className="flex gap-0.5 text-brand-teal">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="size-4 fill-brand-teal" />
@@ -362,7 +385,7 @@ function Testimonials() {
                 <p className="text-sm font-semibold text-brand-navy">{t.name}</p>
                 <p className="text-xs text-muted-foreground">{t.role}</p>
               </figcaption>
-            </figure>
+            </figure></Reveal>
           ))}
         </div>
       </div>
@@ -373,7 +396,7 @@ function Testimonials() {
 function Compliance() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-24">
-      <div className="grid items-center gap-10 rounded-3xl border bg-brand-navy p-8 text-white sm:p-12 lg:grid-cols-2">
+      <Reveal className="grid items-center gap-10 rounded-3xl border bg-brand-navy p-8 text-white sm:p-12 lg:grid-cols-2">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-brand-teal-light">
             <Lock className="size-3.5" /> Seguridad y normativa
@@ -398,18 +421,18 @@ function Compliance() {
             </li>
           ))}
         </ul>
-      </div>
+      </Reveal>
     </section>
   )
 }
 
 function Faq() {
   return (
-    <section id="preguntas" className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:py-24">
+    <section id="preguntas" className="mx-auto max-w-3xl scroll-mt-20 px-4 py-20 sm:px-6 lg:py-24">
       <h2 className="text-center text-3xl font-bold tracking-tight text-brand-navy sm:text-4xl">
         Preguntas frecuentes
       </h2>
-      <div className="mt-12 divide-y rounded-2xl border bg-card">
+      <Reveal className="mt-12 divide-y rounded-2xl border bg-card">
         {FAQS.map((f) => (
           <details key={f.q} className="group p-5">
             <summary className="flex cursor-pointer items-center justify-between font-medium text-brand-navy [&::-webkit-details-marker]:hidden">
@@ -419,16 +442,16 @@ function Faq() {
             <p className="mt-3 text-sm text-muted-foreground">{f.a}</p>
           </details>
         ))}
-      </div>
+      </Reveal>
     </section>
   )
 }
 
 function FinalCta() {
   return (
-    <section id="contacto" className="relative overflow-hidden bg-gradient-to-br from-brand-teal to-brand-teal-dark text-white">
+    <section id="contacto" className="relative scroll-mt-20 overflow-hidden bg-gradient-to-br from-brand-teal to-brand-teal-dark text-white">
       <div className="pointer-events-none absolute -right-20 -top-20 size-72 rounded-full bg-white/10 blur-3xl" />
-      <div className="relative mx-auto max-w-4xl px-4 py-20 text-center sm:px-6">
+      <Reveal className="relative mx-auto max-w-4xl px-4 py-20 text-center sm:px-6">
         <AmaraIcon className="mx-auto size-12 text-white" />
         <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
           Empieza hoy, sin tarjeta
@@ -442,7 +465,7 @@ function FinalCta() {
             Crear mi clínica <ArrowRight className="size-4" />
           </Link>
         </Button>
-      </div>
+      </Reveal>
     </section>
   )
 }

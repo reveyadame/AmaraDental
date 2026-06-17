@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, type ReactNode } from 'react'
 import { useBranding as useBrandingQuery } from '@/features/auth/hooks'
+import { isLandingHost } from '@/shared/api/tenant-host'
 import { inferForeground } from '@/shared/lib/image'
 import { getFont } from '@/shared/theme/fonts'
 import type { Branding } from '@/shared/types/api'
@@ -90,7 +91,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const query = useBrandingQuery()
 
   useEffect(() => {
-    if (query.data) applyBrandingToDocument(query.data)
+    // En el apex (landing pública) NO aplicamos branding de tenant: el sitio
+    // tiene su propia identidad y su SEO fijo (título, etc. en index.html).
+    if (query.data && !isLandingHost()) applyBrandingToDocument(query.data)
   }, [query.data])
 
   return (

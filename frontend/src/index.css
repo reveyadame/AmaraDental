@@ -148,3 +148,51 @@
   --primary-foreground: #ffffff;
   --ring: var(--brand-teal);
 }
+
+/* Desplazamiento suave al navegar entre secciones (anclas #). */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Animación de entrada al hacer scroll (revelado). La activa <Reveal>. */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Entrada del hero al cargar. */
+@keyframes amara-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-up {
+  animation: amara-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Respeta a quien prefiere menos movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal,
+  .animate-fade-up {
+    opacity: 1;
+    transform: none;
+    animation: none;
+    transition: none;
+  }
+}
