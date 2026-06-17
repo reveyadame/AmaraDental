@@ -1,0 +1,50 @@
+name: Deploy landing (sitio público)
+
+# Compila la landing pública y publica el build estático en la rama
+# `deploy-landing`. El servidor sirve esa rama en el vhost del apex
+# (amaradental.mx + www) como document root.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'landing/**'
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-landing
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    name: Build → deploy-landing
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: landing/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: landing
+        run: npm ci
+
+      - name: Build (usa landing/.env.production)
+        working-directory: landing
+        run: npm run build
+
+      - name: Publicar dist en la rama deploy-landing
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: deploy-landing
+          folder: landing/dist
+          clean: true
+          commit-message: 'Deploy landing ${{ github.sha }}'

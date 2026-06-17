@@ -1,0 +1,51 @@
+name: Deploy frontend (app)
+
+# Compila la app privada (clínica + panel) y publica el build estático en la
+# rama `deploy-frontend`. El servidor sirve esa rama en el vhost comodín
+# (*.amaradental.mx) como document root.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+  workflow_dispatch: {}
+
+# Evita despliegues solapados si llegan pushes seguidos.
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    name: Build → deploy-frontend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build (usa frontend/.env.production)
+        working-directory: frontend
+        run: npm run build
+
+      - name: Publicar dist en la rama deploy-frontend
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: deploy-frontend
+          folder: frontend/dist
+          clean: true
+          commit-message: 'Deploy frontend ${{ github.sha }}'

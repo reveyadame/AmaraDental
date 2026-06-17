@@ -249,3 +249,46 @@ tenant y de CSRF (ver `ResolveTenant` y `bootstrap/app.php`).
 **Dev local:** `cd landing && npm run dev` (puerto 5174). Para que llame al
 backend local agrega `http://localhost:5174` (o `lvh.me:5174`) a
 `CORS_ALLOWED_ORIGINS`/patterns del backend de dev.
+
+## 12. Despliegue automático de los frontends (CI)
+
+Tres workflows en `.github/workflows/` sincronizan cada app a una rama que el
+servidor consume (mismo patrón que `deploy-backend`):
+
+| App | Workflow | Dispara con cambios en | Rama de salida | Document root del vhost |
+|---|---|---|---|---|
+| Backend | `sync-deploy-backend.yml` | `backend/**` | `deploy-backend` | sitio `api.amaradental.mx` |
+| App (privada) | `deploy-frontend.yml` | `frontend/**` | `deploy-frontend` | vhost comodín `*.amaradental.mx` |
+| Landing (pública) | `deploy-landing.yml` | `landing/**` | `deploy-landing` | vhost apex `amaradental.mx` + `www` |
+
+Los dos workflows de frontend **compilan en CI** (Node 22, `npm ci && npm run
+build`, usando el `.env.production` de cada app) y publican el `dist/` resultante
+en su rama de despliegue. Así el servidor NO necesita Node ni compilar nada.
+
+**Primera vez:** corre cada workflow manualmente desde GitHub → *Actions* →
+(workflow) → *Run workflow*, para que se creen las ramas `deploy-frontend` y
+`deploy-landing`.
+
+**En el servidor**, apunta cada document root a un clone de su rama:
+
+```bash
+# Apex (landing):
+git clone -b deploy-landing  <repo-url>  /ruta/al/docroot-apex
+# Comodín (app):
+git clone -b deploy-frontend <repo-url>  /ruta/al/docroot-comodin
+```
+
+Para actualizar en cada deploy (a prueba de rebases del CI):
+
+```bash
+git -C /ruta/al/docroot fetch --depth 1 origin <rama>
+git -C /ruta/al/docroot reset --hard origin/<rama>
+```
+
+> Alternativa sin terminal: usa la integración **Git de Plesk** apuntando el
+> dominio a la rama (`deploy-landing` / `deploy-frontend`) con auto-deploy por
+> webhook. El repo es privado → agrega una deploy key.
+
+A partir de ahí, cada `git push origin main` que toque `frontend/**` o
+`landing/**` recompila y actualiza la rama correspondiente sola; en el servidor
+solo haces `git pull`/`reset --hard` (o lo automatizas con la Git de Plesk).
