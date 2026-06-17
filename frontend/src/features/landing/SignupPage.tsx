@@ -82,7 +82,7 @@ function BrandPanel() {
 function SuccessScreen({ result }: { result: SignupResult }) {
   return (
     <div className="amara-brand grid min-h-screen place-items-center bg-muted/40 px-4 py-12">
-      <div className="animate-fade-up w-full max-w-md rounded-3xl border bg-card p-8 text-center shadow-xl">
+      <div className="animate-fade-up-slow w-full max-w-md rounded-3xl border bg-card p-8 text-center shadow-xl">
         <span className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-100 text-emerald-600">
           <CheckCircle2 className="size-8" />
         </span>
@@ -158,8 +158,8 @@ export function SignupPage() {
 
       <div className="flex min-h-screen flex-col bg-background px-4 py-8 sm:px-8">
         <div
-          className="animate-fade-up mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-6"
-          style={{ animationDelay: '120ms' }}
+          className="animate-fade-up-slow mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-6"
+          style={{ animationDelay: '260ms' }}
         >
           <Link
             to="/"
