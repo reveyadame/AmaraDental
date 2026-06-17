@@ -47,7 +47,7 @@ const SIDE_POINTS = [
 
 function BrandPanel() {
   return (
-    <div className="relative hidden overflow-hidden bg-gradient-to-br from-brand-navy via-brand-navy to-brand-navy-deep p-10 text-white lg:flex lg:flex-col lg:justify-between">
+    <div className="animate-slide-in-left relative hidden overflow-hidden bg-gradient-to-br from-brand-navy via-brand-navy to-brand-navy-deep p-10 text-white lg:flex lg:flex-col lg:justify-between">
       <div className="pointer-events-none absolute -right-20 -top-20 size-72 rounded-full bg-brand-teal/20 blur-3xl" />
       <Link to="/" className="relative">
         <AmaraWordmark tone="light" iconClassName="size-9" />
@@ -82,7 +82,7 @@ function BrandPanel() {
 function SuccessScreen({ result }: { result: SignupResult }) {
   return (
     <div className="amara-brand grid min-h-screen place-items-center bg-muted/40 px-4 py-12">
-      <div className="w-full max-w-md rounded-3xl border bg-card p-8 text-center shadow-xl">
+      <div className="animate-fade-up w-full max-w-md rounded-3xl border bg-card p-8 text-center shadow-xl">
         <span className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-100 text-emerald-600">
           <CheckCircle2 className="size-8" />
         </span>
@@ -157,7 +157,10 @@ export function SignupPage() {
       <BrandPanel />
 
       <div className="flex min-h-screen flex-col bg-background px-4 py-8 sm:px-8">
-        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-6">
+        <div
+          className="animate-fade-up mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-6"
+          style={{ animationDelay: '120ms' }}
+        >
           <Link
             to="/"
             className="mb-8 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-brand-navy"

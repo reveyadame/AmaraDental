@@ -183,13 +183,42 @@ html {
   animation: amara-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Entrada de página (transición al navegar, p. ej. a /registro). */
+@keyframes amara-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-fade-in {
+  animation: amara-fade-in 0.5s ease both;
+}
+
+@keyframes amara-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-slide-in-left {
+  animation: amara-slide-in-left 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Respeta a quien prefiere menos movimiento. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
   .reveal,
-  .animate-fade-up {
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-slide-in-left {
     opacity: 1;
     transform: none;
     animation: none;
