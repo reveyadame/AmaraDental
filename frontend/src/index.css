@@ -36,6 +36,13 @@
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
 
+  /* Marca Amara Dental (sitio público / apex). Colores fijos de marca. */
+  --brand-navy: #103a5b;
+  --brand-navy-deep: #0c2c46;
+  --brand-teal: #1ba4c6;
+  --brand-teal-dark: #1587a4;
+  --brand-teal-light: #38b6d4;
+
   --radius: 0.625rem;
 
   /* Cromo de la app — el tenant puede sobreescribir vía ThemeProvider. */
@@ -98,6 +105,11 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-navy-deep: var(--brand-navy-deep);
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-teal-dark: var(--brand-teal-dark);
+  --color-brand-teal-light: var(--brand-teal-light);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -124,4 +136,15 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
+}
+
+/*
+  Sitio público de Amara Dental (apex): dentro de .amara-brand, el primario del
+  tema apunta al teal de marca, así los componentes (botones, anillos) se ven
+  con la identidad sin tocar el tema de las clínicas.
+*/
+.amara-brand {
+  --primary: var(--brand-teal);
+  --primary-foreground: #ffffff;
+  --ring: var(--brand-teal);
 }

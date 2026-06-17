@@ -16,6 +16,9 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Permite previsualizar el ruteo por host en local con lvh.me (resuelve a
+    // 127.0.0.1): lvh.me=landing, <slug>.lvh.me=clínica, admin.lvh.me=plataforma.
+    allowedHosts: ['.lvh.me'],
   },
   test: {
     environment: 'jsdom',

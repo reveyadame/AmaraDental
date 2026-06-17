@@ -1,9 +1,20 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, MailCheck, X } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  Loader2,
+  MailCheck,
+  ShieldCheck,
+  Sparkles,
+  X,
+} from 'lucide-react'
 import { usePublicPlans, useDebouncedValue, useSignup, useSlugCheck } from './hooks'
 import type { SignupResult } from './api'
-import { DEFAULT_BRAND_NAME } from '@/shared/lib/brand'
+import { AmaraLogoVertical, AmaraWordmark } from './AmaraLogo'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { formatMXN } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
@@ -28,28 +39,74 @@ const slugify = (v: string) =>
     .replace(/-+/g, '-')
     .replace(/^-/, '')
 
+const SIDE_POINTS = [
+  { icon: Clock, text: '14 días gratis, sin compromiso' },
+  { icon: CreditCard, text: 'Sin tarjeta para empezar' },
+  { icon: ShieldCheck, text: 'Cumple las NOM mexicanas de salud' },
+]
+
+function BrandPanel() {
+  return (
+    <div className="relative hidden overflow-hidden bg-gradient-to-br from-brand-navy via-brand-navy to-brand-navy-deep p-10 text-white lg:flex lg:flex-col lg:justify-between">
+      <div className="pointer-events-none absolute -right-20 -top-20 size-72 rounded-full bg-brand-teal/20 blur-3xl" />
+      <Link to="/" className="relative">
+        <AmaraWordmark tone="light" iconClassName="size-9" />
+      </Link>
+      <div className="relative">
+        <h2 className="text-3xl font-bold leading-tight tracking-tight">
+          Tu clínica, más ordenada desde el primer día.
+        </h2>
+        <ul className="mt-8 space-y-4">
+          {SIDE_POINTS.map((p) => (
+            <li key={p.text} className="flex items-center gap-3">
+              <span className="grid size-9 place-items-center rounded-xl bg-white/10 text-brand-teal-light">
+                <p.icon className="size-5" />
+              </span>
+              <span className="text-white/85">{p.text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <figure className="relative rounded-2xl border border-white/10 bg-white/5 p-5">
+        <blockquote className="text-sm text-white/85">
+          “Configurarlo fue rapidísimo y mi equipo lo aprendió en un día.”
+        </blockquote>
+        <figcaption className="mt-2 text-xs text-white/60">
+          Dra. Paola Hernández · Centro Dental Aura
+        </figcaption>
+      </figure>
+    </div>
+  )
+}
+
 function SuccessScreen({ result }: { result: SignupResult }) {
   return (
-    <div className="mx-auto max-w-md text-center">
-      <span className="mx-auto grid size-14 place-items-center rounded-full bg-emerald-100 text-emerald-600">
-        <CheckCircle2 className="size-7" />
-      </span>
-      <h1 className="mt-5 text-2xl font-bold tracking-tight">¡Tu clínica está lista!</h1>
-      <p className="mt-2 text-muted-foreground">
-        Tu espacio en <strong>{result.slug}.{CENTRAL}</strong> ya está activo con 14 días gratis.
-      </p>
-      <div className="mt-5 flex items-center justify-center gap-2 rounded-lg border bg-muted/40 p-3 text-sm">
-        <MailCheck className="size-4 text-emerald-600" />
-        Te enviamos tus credenciales a <strong>{result.admin_email}</strong>
+    <div className="amara-brand grid min-h-screen place-items-center bg-muted/40 px-4 py-12">
+      <div className="w-full max-w-md rounded-3xl border bg-card p-8 text-center shadow-xl">
+        <span className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-100 text-emerald-600">
+          <CheckCircle2 className="size-8" />
+        </span>
+        <h1 className="mt-6 text-2xl font-bold tracking-tight text-brand-navy">¡Tu clínica está lista!</h1>
+        <p className="mt-2 text-muted-foreground">
+          Tu espacio en{' '}
+          <strong className="text-brand-navy">
+            {result.slug}.{CENTRAL}
+          </strong>{' '}
+          ya está activo con 14 días gratis.
+        </p>
+        <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border bg-muted/50 p-3 text-sm">
+          <MailCheck className="size-4 text-emerald-600" />
+          Te enviamos tus credenciales a <strong>{result.admin_email}</strong>
+        </div>
+        <Button size="lg" asChild className="mt-6 w-full">
+          <a href={result.app_url}>
+            Ir a mi clínica <ArrowRight className="size-4" />
+          </a>
+        </Button>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Revisa tu correo (incluida la carpeta de spam) para tu usuario y contraseña.
+        </p>
       </div>
-      <Button size="lg" asChild className="mt-6 w-full">
-        <a href={result.app_url}>
-          Ir a mi clínica <ArrowRight className="size-4" />
-        </a>
-      </Button>
-      <p className="mt-3 text-xs text-muted-foreground">
-        Revisa tu correo (incluida la carpeta de spam) para tu usuario y contraseña.
-      </p>
     </div>
   )
 }
@@ -93,38 +150,33 @@ export function SignupPage() {
     )
   }
 
-  if (result) {
-    return (
-      <div className="min-h-screen bg-muted/30 px-4 py-16">
-        <SuccessScreen result={result} />
-      </div>
-    )
-  }
+  if (result) return <SuccessScreen result={result} />
 
   return (
-    <div className="min-h-screen bg-muted/30 px-4 py-10">
-      <div className="mx-auto max-w-lg">
-        <Link
-          to="/"
-          className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" /> Volver
-        </Link>
+    <div className="amara-brand min-h-screen lg:grid lg:grid-cols-2">
+      <BrandPanel />
 
-        <div className="rounded-2xl border bg-card p-6 sm:p-8">
-          <div className="mb-6 flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-xl bg-primary text-primary-foreground text-sm font-bold">
-              AD
-            </span>
-            <span className="font-semibold">{DEFAULT_BRAND_NAME}</span>
+      <div className="flex min-h-screen flex-col bg-background px-4 py-8 sm:px-8">
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-6">
+          <Link
+            to="/"
+            className="mb-8 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-brand-navy"
+          >
+            <ArrowLeft className="size-4" /> Volver al inicio
+          </Link>
+
+          <div className="lg:hidden">
+            <AmaraLogoVertical iconClassName="size-12" className="mx-auto" />
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight">Crea tu clínica</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            14 días gratis. Sin tarjeta. Listo en un minuto.
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-brand-navy lg:mt-0">
+            Crea tu clínica
+          </h1>
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Sparkles className="size-4 text-brand-teal" /> 14 días gratis · sin tarjeta · listo en un minuto
           </p>
 
-          <form onSubmit={submit} className="mt-6 space-y-4">
+          <form onSubmit={submit} className="mt-7 space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="clinic">Nombre de la clínica</Label>
               <Input
@@ -140,17 +192,19 @@ export function SignupPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="slug">Tu subdominio</Label>
-              <div className="flex items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring">
+              <Label htmlFor="slug">Tu dirección web</Label>
+              <div className="flex items-center overflow-hidden rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring">
                 <input
                   id="slug"
                   value={slug}
                   onChange={(e) => setSlug(slugify(e.target.value))}
                   placeholder="sonrisas"
-                  className="w-full rounded-l-md bg-transparent px-3 py-2 text-sm outline-none"
+                  className="w-full bg-transparent px-3 py-2 text-sm outline-none"
                   autoComplete="off"
                 />
-                <span className="px-3 text-sm text-muted-foreground">.{CENTRAL}</span>
+                <span className="whitespace-nowrap bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
+                  .{CENTRAL}
+                </span>
               </div>
               <SlugHint
                 slug={slug}
@@ -171,9 +225,7 @@ export function SignupPage() {
                 placeholder="tu@correo.com"
                 required
               />
-              <p className="text-xs text-muted-foreground">
-                Ahí te enviamos tus credenciales de acceso.
-              </p>
+              <p className="text-xs text-muted-foreground">Ahí te enviamos tus credenciales de acceso.</p>
             </div>
 
             <div className="space-y-1.5">
@@ -207,7 +259,7 @@ export function SignupPage() {
             </div>
 
             {signup.isError ? (
-              <p className="text-sm text-destructive">
+              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {getApiErrorMessage(signup.error, 'No fue posible crear tu clínica. Intenta de nuevo.')}
               </p>
             ) : null}
