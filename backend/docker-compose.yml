@@ -1,9 +1,11 @@
+name: amara
+
 services:
   app:
     build:
       context: ./docker
       dockerfile: Dockerfile
-    container_name: ciodent_app
+    container_name: amara_backend
     working_dir: /var/www/html
     volumes:
       - .:/var/www/html
@@ -20,11 +22,11 @@ services:
       db:
         condition: service_healthy
     networks:
-      - ciodent
+      - amara
 
   db:
     image: mysql:8.0
-    container_name: ciodent_db
+    container_name: amara_db
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ciodent
@@ -34,18 +36,18 @@ services:
     ports:
       - "3307:3306"
     volumes:
-      - ciodent_db_data:/var/lib/mysql
+      - amara_db_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
       interval: 5s
       timeout: 5s
       retries: 20
     networks:
-      - ciodent
+      - amara
 
 volumes:
-  ciodent_db_data:
+  amara_db_data:
 
 networks:
-  ciodent:
+  amara:
     driver: bridge
