@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Plan de suscripción del SaaS. Dato de referencia global (no tenant-scoped).
- * `max_patients` null = ilimitado; `includes_app` habilita el portal móvil.
+ * `max_patients` null = ilimitado.
  */
 class Plan extends Model
 {
@@ -17,7 +17,6 @@ class Plan extends Model
         'key',
         'name',
         'max_patients',
-        'includes_app',
         'price_mxn',
         'stripe_price_id',
         'sort_order',
@@ -27,7 +26,6 @@ class Plan extends Model
     {
         return [
             'max_patients' => 'integer',
-            'includes_app' => 'boolean',
             'price_mxn' => 'integer',
             'sort_order' => 'integer',
         ];

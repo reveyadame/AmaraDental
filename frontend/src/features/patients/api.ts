@@ -25,32 +25,6 @@ export async function getPatient(id: number): Promise<Patient> {
   return data.data
 }
 
-// ── Portal de pacientes (app móvil) ──────────────────────────────────────────
-
-export interface PortalAccess {
-  patient_id: number
-  has_access: boolean
-  status: 'pending' | 'active' | 'blocked' | null
-  identifier: string | null
-  last_login_at: string | null
-}
-
-export async function getPortalAccess(patientId: number): Promise<PortalAccess> {
-  const { data } = await api.get<ApiEnvelope<PortalAccess>>(`/api/patients/${patientId}/portal`)
-  return data.data
-}
-
-export async function invitePortal(patientId: number): Promise<PortalAccess> {
-  const { data } = await api.post<ApiEnvelope<PortalAccess>>(
-    `/api/patients/${patientId}/portal/invite`,
-  )
-  return data.data
-}
-
-export async function revokePortal(patientId: number): Promise<void> {
-  await api.delete(`/api/patients/${patientId}/portal`)
-}
-
 export interface PatientFormPayload {
   first_name: string
   last_name: string

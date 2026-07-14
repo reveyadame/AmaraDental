@@ -163,7 +163,6 @@ export function NewClinicDialog() {
                         {p.max_patients === null
                           ? 'pacientes ilimitados'
                           : `${p.max_patients} pacientes`}
-                        {p.includes_app ? ' + app' : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>

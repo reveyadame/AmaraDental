@@ -11,8 +11,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Guard del panel de plataforma. El token autenticado debe pertenecer a un
- * PlatformAdmin (no a un User de clínica ni a un PatientAccount). No hay
- * tenant-match: el super-admin opera por encima de todos los tenants.
+ * PlatformAdmin (no a un User de clínica). No hay tenant-match: el super-admin
+ * opera por encima de todos los tenants.
  */
 class EnsurePlatformAdmin
 {

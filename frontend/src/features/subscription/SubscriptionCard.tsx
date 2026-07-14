@@ -1,12 +1,11 @@
-import { Loader2, Smartphone, Users } from 'lucide-react'
+import { Loader2, Users } from 'lucide-react'
 import { useSubscription } from './hooks'
-import { Badge } from '@/shared/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 
 /**
- * Resumen de la suscripción de la clínica: plan, uso de pacientes y si incluye
- * la app. El cambio de plan es manual (contactar a Amara Dental) hasta que
- * exista el billing automático.
+ * Resumen de la suscripción de la clínica: plan y uso de pacientes. El cambio
+ * de plan es manual (contactar a Amara Dental) hasta que exista el billing
+ * automático.
  */
 export function SubscriptionCard() {
   const sub = useSubscription()
@@ -23,7 +22,7 @@ export function SubscriptionCard() {
 
   if (!sub.data) return null
 
-  const { plan, max_patients, patients_count, includes_app } = sub.data
+  const { plan, max_patients, patients_count } = sub.data
   const unlimited = max_patients === null
   const pct = unlimited ? 0 : Math.min(100, Math.round((patients_count / max_patients) * 100))
   const atLimit = !unlimited && patients_count >= max_patients
@@ -34,16 +33,7 @@ export function SubscriptionCard() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-base">{plan ? `Plan ${plan}` : 'Sin plan asignado'}</CardTitle>
-          {includes_app ? (
-            <Badge variant="secondary" className="gap-1">
-              <Smartphone className="size-3" /> App incluida
-            </Badge>
-          ) : (
-            <Badge variant="outline">Sin app de pacientes</Badge>
-          )}
-        </div>
+        <CardTitle className="text-base">{plan ? `Plan ${plan}` : 'Sin plan asignado'}</CardTitle>
         <CardDescription>Tu suscripción a Amara Dental.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

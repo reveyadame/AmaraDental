@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
-use App\Models\PatientAccount;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +23,7 @@ class DeleteTenant
 {
     /**
      * Modelos tenant-scoped (todos usan BelongsToTenant). Se borran por
-     * tenant_id. Incluye users y patient_accounts.
+     * tenant_id. Incluye users.
      *
      * @var list<class-string<\Illuminate\Database\Eloquent\Model>>
      */
@@ -48,7 +47,6 @@ class DeleteTenant
         \App\Models\Membership::class,
         \App\Models\MembershipPlan::class,
         \App\Models\PatientCredit::class,
-        \App\Models\PatientLoginCode::class,
         \App\Models\Prescription::class,
         \App\Models\PrescriptionItem::class,
         \App\Models\PrescriptionTemplate::class,
@@ -61,7 +59,6 @@ class DeleteTenant
         \App\Models\Treatment::class,
         \App\Models\TreatmentSpecialistCommission::class,
         \App\Models\Patient::class,
-        \App\Models\PatientAccount::class,
         \App\Models\User::class,
     ];
 
@@ -72,14 +69,12 @@ class DeleteTenant
 
         $tenantId = $tenant->id;
         $userIds = DB::table('users')->where('tenant_id', $tenantId)->pluck('id')->all();
-        $patientAccountIds = DB::table('patient_accounts')->where('tenant_id', $tenantId)->pluck('id')->all();
         $subscriptionIds = DB::table('subscriptions')->where('tenant_id', $tenantId)->pluck('id')->all();
 
-        DB::transaction(function () use ($tenantId, $userIds, $patientAccountIds, $subscriptionIds): void {
-            Schema::withoutForeignKeyConstraints(function () use ($tenantId, $userIds, $patientAccountIds, $subscriptionIds): void {
-                // Tokens Sanctum de los usuarios y cuentas de paciente.
+        DB::transaction(function () use ($tenantId, $userIds, $subscriptionIds): void {
+            Schema::withoutForeignKeyConstraints(function () use ($tenantId, $userIds, $subscriptionIds): void {
+                // Tokens Sanctum de los usuarios.
                 $this->deleteTokens(User::class, $userIds);
-                $this->deleteTokens(PatientAccount::class, $patientAccountIds);
 
                 // Roles/permisos (spatie) de los usuarios.
                 if ($userIds !== []) {

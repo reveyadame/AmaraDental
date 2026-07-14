@@ -27,18 +27,12 @@ use App\Http\Controllers\MembershipsController;
 use App\Http\Controllers\DentalTreatmentLogController;
 use App\Http\Controllers\EndodonticRecordsController;
 use App\Http\Controllers\OdontogramController;
-use App\Http\Controllers\Patient\AccountController as PatientAccountController;
 use App\Http\Controllers\Public\SignupController;
 use App\Http\Controllers\Platform\AdminsController as PlatformAdminsController;
 use App\Http\Controllers\Platform\AuthController as PlatformAuthController;
 use App\Http\Controllers\Platform\PlansController as PlatformPlansController;
 use App\Http\Controllers\Platform\StatsController as PlatformStatsController;
 use App\Http\Controllers\Platform\TenantsController as PlatformTenantsController;
-use App\Http\Controllers\Patient\AppointmentsController as PatientAppointmentsController;
-use App\Http\Controllers\Patient\AuthController as PatientAuthController;
-use App\Http\Controllers\Patient\PrescriptionsController as PatientPrescriptionsController;
-use App\Http\Controllers\Patient\RecallsController as PatientRecallsController;
-use App\Http\Controllers\PatientPortalController;
 use App\Http\Controllers\PatientsController;
 use App\Http\Controllers\PrescriptionsController;
 use App\Http\Controllers\PrescriptionTemplatesController;
@@ -50,9 +44,7 @@ use App\Http\Controllers\SpecialistsController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TreatmentsController;
 use App\Http\Controllers\UsersController;
-use App\Http\Middleware\EnsureAppModule;
 use App\Http\Middleware\EnsureBillingActive;
-use App\Http\Middleware\EnsurePatientAccount;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsureTenantMatchesUser;
 use Illuminate\Support\Facades\Route;
@@ -101,14 +93,6 @@ Route::middleware([
     // Pre-check de eliminación: indica si un paciente se puede borrar y, si no,
     // qué registros lo bloquean. Solo accesible para admin (policy).
     Route::get('patients/{patient}/delete-preview', [PatientsController::class, 'deletePreview']);
-
-    // Portal de pacientes (app móvil) — gestión del acceso desde el staff.
-    // Gateado por el módulo "app" del plan de la clínica.
-    Route::middleware(EnsureAppModule::class)->group(function (): void {
-        Route::get('patients/{patient}/portal', [PatientPortalController::class, 'show']);
-        Route::post('patients/{patient}/portal/invite', [PatientPortalController::class, 'invite']);
-        Route::delete('patients/{patient}/portal', [PatientPortalController::class, 'revoke']);
-    });
 
     // Historia clínica anidada (upsert vía PUT).
     Route::get('patients/{patient}/medical-history', [MedicalHistoryController::class, 'show']);
@@ -249,26 +233,6 @@ Route::middleware([
     Route::post('memberships', [MembershipsController::class, 'store']);
     Route::post('memberships/{membership}/cancel', [MembershipsController::class, 'cancel']);
     Route::get('patients/{patient}/membership', [MembershipsController::class, 'currentForPatient']);
-});
-
-/*
- * Portal de pacientes (app móvil). Auth por token Sanctum (Bearer), NO cookies.
- * Tenant por header X-Tenant (ResolveTenant). Separado del API de staff.
- */
-Route::prefix('patient')->middleware(EnsureAppModule::class)->group(function (): void {
-    // Públicos (login passwordless por email).
-    Route::post('auth/request-code', [PatientAuthController::class, 'requestCode']);
-    Route::post('auth/verify', [PatientAuthController::class, 'verify']);
-
-    // Autenticados como paciente (token + cuenta del tenant resuelto).
-    Route::middleware(['auth:sanctum', EnsurePatientAccount::class])->group(function (): void {
-        Route::post('auth/logout', [PatientAuthController::class, 'logout']);
-        Route::get('me', [PatientAuthController::class, 'me']);
-        Route::get('appointments', [PatientAppointmentsController::class, 'index']);
-        Route::get('account', [PatientAccountController::class, 'index']);
-        Route::get('prescriptions', [PatientPrescriptionsController::class, 'index']);
-        Route::get('recalls', [PatientRecallsController::class, 'index']);
-    });
 });
 
 /*

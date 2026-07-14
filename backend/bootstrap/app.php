@@ -20,12 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // statefulApi() ya prepende EnsureFrontendRequestsAreStateful al stack api.
         $middleware->statefulApi();
 
-        // Las APIs token-based (panel de plataforma y app de pacientes) NO usan
-        // cookies/sesión → quedan fuera de CSRF. Si no, las peticiones desde el
-        // origen del SPA se tratan como stateful y fallan con 419.
+        // Las APIs token-based (panel de plataforma) NO usan cookies/sesión →
+        // quedan fuera de CSRF. Si no, las peticiones desde el origen del SPA
+        // se tratan como stateful y fallan con 419.
         $middleware->validateCsrfTokens(except: [
             'api/platform/*',
-            'api/patient/*',
             'api/public/*', // alta self-service desde la landing (apex, sin sesión).
             'stripe/*', // webhook de Stripe (Cashier) — viene de Stripe, sin cookie.
         ]);

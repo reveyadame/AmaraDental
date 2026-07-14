@@ -7,7 +7,6 @@ export interface Subscription {
   max_patients: number | null // null = ilimitado
   patients_count: number
   can_add_patients: boolean
-  includes_app: boolean
 }
 
 export async function getSubscription(): Promise<Subscription> {

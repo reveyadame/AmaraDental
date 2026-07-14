@@ -33,7 +33,6 @@ class SignupController extends Controller
                 'key' => $p->key,
                 'name' => $p->name,
                 'max_patients' => $p->max_patients,
-                'includes_app' => $p->includes_app,
                 'price_mxn' => $p->price_mxn,
             ])->values(),
         ]);

@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Check, Loader2, Smartphone, Sparkles, TriangleAlert } from 'lucide-react'
+import { Check, Loader2, Sparkles, TriangleAlert } from 'lucide-react'
 import { usePlans, useUpdatePlan } from './hooks'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
-import { cn } from '@/shared/lib/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
@@ -11,57 +10,18 @@ import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import type { PlatformPlanFull } from './api'
 
-function Toggle({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean
-  onChange: (v: boolean) => void
-  label: string
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="flex items-center gap-2 text-sm"
-    >
-      <span
-        className={cn(
-          'relative h-5 w-9 rounded-full transition-colors',
-          checked ? 'bg-primary' : 'bg-muted-foreground/30',
-        )}
-      >
-        <span
-          className={cn(
-            'absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform',
-            checked && 'translate-x-4',
-          )}
-        />
-      </span>
-      <span className="flex items-center gap-1">
-        <Smartphone className="size-3.5 text-muted-foreground" /> {label}
-      </span>
-    </button>
-  )
-}
-
 function PlanCard({ plan }: { plan: PlatformPlanFull }) {
   const update = useUpdatePlan()
   const [name, setName] = useState(plan.name)
   const [price, setPrice] = useState(plan.price_mxn?.toString() ?? '')
   const [unlimited, setUnlimited] = useState(plan.max_patients === null)
   const [maxPatients, setMaxPatients] = useState(plan.max_patients?.toString() ?? '')
-  const [includesApp, setIncludesApp] = useState(plan.includes_app)
   const [stripePrice, setStripePrice] = useState(plan.stripe_price_id ?? '')
 
   const dirty =
     name !== plan.name ||
     (price === '' ? null : Number(price)) !== plan.price_mxn ||
     (unlimited ? null : maxPatients === '' ? null : Number(maxPatients)) !== plan.max_patients ||
-    includesApp !== plan.includes_app ||
     (stripePrice || null) !== plan.stripe_price_id
 
   const save = () => {
@@ -71,7 +31,6 @@ function PlanCard({ plan }: { plan: PlatformPlanFull }) {
         name: name.trim(),
         price_mxn: price === '' ? null : Number(price),
         max_patients: unlimited ? null : maxPatients === '' ? null : Number(maxPatients),
-        includes_app: includesApp,
         stripe_price_id: stripePrice.trim() || null,
       },
       {
@@ -132,7 +91,6 @@ function PlanCard({ plan }: { plan: PlatformPlanFull }) {
             />
             Pacientes ilimitados
           </label>
-          <Toggle checked={includesApp} onChange={setIncludesApp} label="Incluye app de pacientes" />
         </div>
 
         <div className="space-y-1.5">

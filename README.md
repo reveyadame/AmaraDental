@@ -1,6 +1,6 @@
 # CIO Dent
 
-Plataforma de gestión para clínicas dentales. Inicialmente single-tenant para un cliente piloto, con arquitectura preparada para migración a SaaS multi-tenant. App móvil Flutter para pacientes en una fase posterior.
+Plataforma de gestión para clínicas dentales. Inicialmente single-tenant para un cliente piloto, con arquitectura preparada para migración a SaaS multi-tenant.
 
 ## Estructura
 
@@ -19,7 +19,6 @@ Plataforma de gestión para clínicas dentales. Inicialmente single-tenant para 
 | Frontend | React 18, TypeScript estricto, Vite, Tailwind CSS, shadcn/ui, Radix, TanStack Query, React Router v6, React Hook Form + Zod, Zustand, Recharts, TanStack Table |
 | DB (dev) | SQLite |
 | DB (prod) | MySQL 8 sobre VPS con Plesk |
-| Móvil (futuro) | Flutter + Supabase (push) |
 
 ## Multi-tenancy
 

@@ -9,12 +9,9 @@ import {
   getMedicalHistory,
   getPatient,
   getPatientDeletePreview,
-  getPortalAccess,
-  invitePortal,
   listConsentTemplates,
   listConsents,
   listPatients,
-  revokePortal,
   updateMedicalHistory,
   updatePatient,
   type ConsentCreatePayload,
@@ -29,31 +26,6 @@ const patientKey = (id: number) => ['patients', id] as const
 const medicalHistoryKey = (id: number) => ['patients', id, 'medical-history'] as const
 const consentsKey = (id: number) => ['patients', id, 'consents'] as const
 const templatesKey = ['consent-templates'] as const
-const portalKey = (id: number) => ['patients', id, 'portal'] as const
-
-export function usePortalAccess(patientId: number, enabled = true) {
-  return useQuery({
-    queryKey: portalKey(patientId),
-    queryFn: () => getPortalAccess(patientId),
-    enabled,
-  })
-}
-
-export function useInvitePortal(patientId: number) {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: () => invitePortal(patientId),
-    onSuccess: (access) => qc.setQueryData(portalKey(patientId), access),
-  })
-}
-
-export function useRevokePortal(patientId: number) {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: () => revokePortal(patientId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: portalKey(patientId) }),
-  })
-}
 
 export function usePatients(query: PatientListQuery) {
   return useQuery({

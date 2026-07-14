@@ -4,7 +4,6 @@ export interface PublicPlan {
   key: string
   name: string
   max_patients: number | null
-  includes_app: boolean
   price_mxn: number | null
 }
 

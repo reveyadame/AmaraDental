@@ -31,7 +31,8 @@ class EnsureTenantMatchesUser
             return $next($request);
         }
 
-        // Un token de paciente (PatientAccount) no puede operar la API de staff.
+        // Un token que no sea de un User de clínica (p. ej. de un PlatformAdmin)
+        // no puede operar la API de staff.
         abort_unless($user instanceof User, 403, 'Token no válido para esta API.');
 
         if (TenantContext::hasTenant()

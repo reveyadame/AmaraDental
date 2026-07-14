@@ -87,9 +87,11 @@ Toda búsqueda de "sesión abierta" en controllers (`CashExpensesController`, `C
 - `ChargesController::cancel` aborta si el cobro tiene pagos en alguna sesión cerrada.
 - [CashMovementsPage](frontend/src/pages/CashMovementsPage.tsx) (vista admin consolidada de pagos + egresos con filtros por fecha) oculta botones cuando `cash_session_status === 'closed'` y muestra chip "Corte cerrado".
 
-### Auth: Sanctum cookie-based para web, tokens para móvil
+### Auth: Sanctum cookie-based para la app privada, tokens para plataforma
 
-El cliente axios en [frontend/src/shared/api/client.ts](frontend/src/shared/api/client.ts) usa `withCredentials` + `withXSRFToken` y expone `ensureCsrf()` que llama a `/sanctum/csrf-cookie` **una vez** antes de cualquier petición autenticada (idempotente — no la llames en cada request). Cuando entre la app Flutter, esa usará tokens Sanctum (`Bearer`), no cookies.
+El cliente axios en [frontend/src/shared/api/client.ts](frontend/src/shared/api/client.ts) usa `withCredentials` + `withXSRFToken` y expone `ensureCsrf()` que llama a `/sanctum/csrf-cookie` **una vez** antes de cualquier petición autenticada (idempotente — no la llames en cada request). El panel de super-admin (`/api/platform/*`) es la excepción: usa tokens Sanctum (`Bearer`), no cookies, y por eso queda fuera de CSRF en `bootstrap/app.php`.
+
+**No hay app ni portal para el paciente final**: el paciente no inicia sesión en ningún lado. Se retiró (junto con el módulo de plan `includes_app` que lo habilitaba) — no lo reintroduzcas sin que el producto lo pida.
 
 Un 401 dispara `window.dispatchEvent('auth:unauthenticated')` — el router lo escucha y redirige a `/login`.
 

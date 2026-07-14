@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Clock,
   CreditCard,
+  FileText,
   FlaskConical,
   Heart,
   Lock,
@@ -16,7 +17,6 @@ import {
   Menu,
   Palette,
   ShieldCheck,
-  Smartphone,
   Sparkles,
   Star,
   Wallet,
@@ -43,7 +43,7 @@ const FEATURES = [
   { icon: Wallet, title: 'Caja y cobros', desc: 'Cortes de caja, pagos parciales, comisiones y estados de cuenta sin hojas de cálculo.' },
   { icon: Bell, title: 'Recalls automáticos', desc: 'Recupera pacientes con recordatorios de revisión y limpieza. Más sillón ocupado.' },
   { icon: FlaskConical, title: 'Laboratorios', desc: 'Órdenes y seguimiento de trabajos de laboratorio, con fechas y estatus claros.' },
-  { icon: Smartphone, title: 'App para pacientes', desc: 'Tus pacientes consultan citas y saldos desde su teléfono. Menos llamadas.' },
+  { icon: FileText, title: 'Presupuestos y membresías', desc: 'Cotiza tratamientos y conviértelos en cobros. Planes de membresía para fidelizar.' },
   { icon: Palette, title: 'Con tu marca', desc: 'Tu logo, tus colores y tu propio subdominio: la plataforma se ve como tu clínica.' },
   { icon: BarChart3, title: 'Reportes y métricas', desc: 'Ingresos, producción por especialista y pendientes, en tableros claros.' },
 ]
@@ -85,7 +85,7 @@ const FAQS = [
   { q: '¿Puedo cambiar de plan después?', a: 'Sí, puedes subir o bajar de plan en cualquier momento según el crecimiento de tu clínica.' },
   { q: '¿Mis datos están seguros?', a: 'Cada clínica vive aislada en su propio espacio, con bitácora de auditoría y resguardo conforme a las normas mexicanas de salud (NOM-004, NOM-024).' },
   { q: '¿Sirve para varios consultorios y especialistas?', a: 'Sí. La agenda, la caja y el expediente están pensados para operar con varios especialistas y usuarios a la vez.' },
-  { q: '¿Necesito instalar algo?', a: 'No. Amara Dental funciona en el navegador. Tu equipo entra desde cualquier computadora; tus pacientes, desde su teléfono.' },
+  { q: '¿Necesito instalar algo?', a: 'No. Amara Dental funciona en el navegador. Tu equipo entra desde cualquier computadora, sin instalar nada.' },
 ]
 
 function Header() {
@@ -316,7 +316,7 @@ function PlanCard({ plan, featured }: { plan: PublicPlan; featured: boolean }) {
     'Expediente clínico (NOM-004)',
     'Caja, cobros y comisiones',
     limit,
-    plan.includes_app ? 'App para pacientes incluida' : 'Recalls y laboratorios',
+    'Recalls y laboratorios',
     'Tu marca y subdominio propio',
   ]
   return (

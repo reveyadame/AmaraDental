@@ -25,7 +25,6 @@ export interface PlatformPlan {
   key: string
   name: string
   max_patients: number | null // null = ilimitado
-  includes_app: boolean
 }
 
 /** Plan con todos los campos editables (pantalla de configuración de planes). */
@@ -191,7 +190,6 @@ export async function listPlans(): Promise<PlatformPlanFull[]> {
 export interface UpdatePlanPayload {
   name?: string
   max_patients?: number | null
-  includes_app?: boolean
   price_mxn?: number | null
   stripe_price_id?: string | null
 }
