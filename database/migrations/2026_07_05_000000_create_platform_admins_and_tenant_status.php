@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Capa de plataforma (super-admin del SaaS):
  *  - `platform_admins`: operadores de Amara Dental. AISLADOS de `users` (staff
- *    de clínica) y de `patient_accounts`. Viven por encima de los tenants.
+ *    de clínica). Viven por encima de los tenants.
  *  - `tenants.status`: active | suspended. Una clínica suspendida no resuelve
  *    (ver ResolveTenant), salvo para las rutas de plataforma.
  */

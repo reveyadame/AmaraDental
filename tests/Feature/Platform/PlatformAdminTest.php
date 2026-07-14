@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Platform;
 
 use App\Mail\ClinicCredentialsResetMail;
-use App\Models\PatientAccount;
 use App\Models\Patient;
 use App\Models\Plan;
 use App\Models\PlatformAdmin;
@@ -166,13 +165,6 @@ class PlatformAdminTest extends TestCase
         $this->withToken($token)->getJson('/api/patients')->assertForbidden();
     }
 
-    public function test_platform_admin_token_cannot_access_patient_api(): void
-    {
-        $token = $this->platformToken();
-
-        $this->withToken($token)->getJson('/api/patient/me')->assertForbidden();
-    }
-
     // ── Planes (Fase 2) ────────────────────────────────────────────────────
 
     public function test_platform_admin_can_list_plans(): void
@@ -211,8 +203,7 @@ class PlatformAdminTest extends TestCase
         $this->withToken($token)->patchJson("/api/platform/tenants/{$id}", [
             'plan_key' => 'premium',
         ])->assertOk()
-            ->assertJsonPath('data.plan.key', 'premium')
-            ->assertJsonPath('data.plan.includes_app', true);
+            ->assertJsonPath('data.plan.key', 'premium');
     }
 
     public function test_platform_admin_can_edit_a_plan(): void
@@ -223,11 +214,9 @@ class PlatformAdminTest extends TestCase
         $this->withToken($token)->patchJson("/api/platform/plans/{$planId}", [
             'max_patients' => 500,
             'price_mxn' => 599,
-            'includes_app' => true,
         ])->assertOk()
             ->assertJsonPath('data.max_patients', 500)
-            ->assertJsonPath('data.price_mxn', 599)
-            ->assertJsonPath('data.includes_app', true);
+            ->assertJsonPath('data.price_mxn', 599);
 
         $this->assertDatabaseHas('plans', ['key' => 'esencial', 'max_patients' => 500, 'price_mxn' => 599]);
     }

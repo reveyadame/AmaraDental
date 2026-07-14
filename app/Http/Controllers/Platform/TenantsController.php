@@ -150,7 +150,6 @@ class TenantsController extends Controller
                 'key' => $plan->key,
                 'name' => $plan->name,
                 'max_patients' => $plan->max_patients,
-                'includes_app' => $plan->includes_app,
                 'price_mxn' => $plan->price_mxn,
             ] : null,
             'created_at' => $tenant->created_at?->toIso8601String(),

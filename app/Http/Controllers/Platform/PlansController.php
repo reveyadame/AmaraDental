@@ -33,7 +33,6 @@ class PlansController extends Controller
             'name' => ['sometimes', 'string', 'max:255'],
             // null = ilimitado. Entero positivo si se especifica.
             'max_patients' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:1000000'],
-            'includes_app' => ['sometimes', 'boolean'],
             'price_mxn' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:1000000'],
             'stripe_price_id' => ['sometimes', 'nullable', 'string', 'max:255'],
         ]);
@@ -51,7 +50,6 @@ class PlansController extends Controller
             'key' => $plan->key,
             'name' => $plan->name,
             'max_patients' => $plan->max_patients,
-            'includes_app' => $plan->includes_app,
             'price_mxn' => $plan->price_mxn,
             'stripe_price_id' => $plan->stripe_price_id,
             // ¿Listo para cobrar? (tiene price configurado en Stripe).

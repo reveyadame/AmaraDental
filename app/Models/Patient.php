@@ -75,12 +75,6 @@ class Patient extends Model implements Auditable
         return $this->hasOne(MedicalHistory::class);
     }
 
-    /** Acceso del paciente a la app móvil (existe solo si fue invitado). */
-    public function account(): HasOne
-    {
-        return $this->hasOne(PatientAccount::class);
-    }
-
     public function consents(): HasMany
     {
         return $this->hasMany(Consent::class);

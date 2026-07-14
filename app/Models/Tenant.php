@@ -121,12 +121,6 @@ class Tenant extends Model
         return $this->plan?->max_patients;
     }
 
-    /** ¿El plan incluye la app de pacientes? Sin plan → sí (grandfathered). */
-    public function includesApp(): bool
-    {
-        return $this->plan ? (bool) $this->plan->includes_app : true;
-    }
-
     /**
      * Branding lo expone el frontend para inyectar el tema.
      */
